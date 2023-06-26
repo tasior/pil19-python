@@ -1,10 +1,10 @@
-import wlan
+import mm_wlan
 from microdot_asyncio import Microdot, send_file
 from microdot_asyncio_websocket import with_websocket
 import uasyncio as asyncio
 from machine import Timer
 
-wlan.connect_to_network('Hillton', 's13cg0rk0wa')
+mm_wlan.connect_to_network('Hillton', 's13cg0rk0wa')
 
 clients = []
 
@@ -12,7 +12,7 @@ app = Microdot()
 
 @app.route('/')
 def index(request):
-    return send_file('index.html')
+    return send_file('./web/index.html')
 
 @app.route('/echo')
 @with_websocket
