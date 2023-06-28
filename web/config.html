@@ -1,41 +1,327 @@
-<!doctype html>
-<html>
-  <head>
-    <title>Pil19 Controller - Configuration</title>
-    <meta charset="UTF-8">
-  </head>
-  <body>
-    <h1>Microdot WebSocket Demo</h1>
-    <div id="log"></div>
-    <br>
-    <form id="form">
-      <label for="text">Input: </label>
-      <input type="text" id="text" autofocus>
-    </form>
-    <script>
-      const log = (text, color) => {
-        document.getElementById('log').innerHTML += `<span style="color: ${color}">${text}</span><br>`;
-      };
+<!DOCTYPE html>
+<html lang="en">
 
-      const socket = new WebSocket('ws://' + location.host + '/ws');
-      socket.addEventListener('message', ev => {
-        console.log(ev);
-        console.log(ev.data)
-        log('<<< ' + ev.data, 'blue');
-      });
-      socket.addEventListener('close', ev => {
-        log('<<< closed');
-      });
-      document.getElementById('form').onsubmit = ev => {
-        ev.preventDefault();
-        const textField = document.getElementById('text');
-        log('>>> ' + textField.value, 'red');
-        socket.send(JSON.stringify({
-          command: 'generic',
-          value: textField.value
-        }));
-        textField.value = '';
-      };
+<head>
+  <meta charset="UTF-8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="/web/static/manifest-config.webmanifest" />
+  <link rel="shortcut icon" type="image/x-icon" href="/web/static/favicon-conf.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rolety 2.0 Config</title>
+
+  <link href="/web/css/bootstrap-5.3.0.min.css" rel="stylesheet">
+
+  <script src="/web/js/deviceid.js"></script>
+  <script src="/web/js/socket.js"></script>
+  <script src="/web/js/jquery-3.7.0.min.js"></script>
+  <script src="/web/js/bootstrap-5.3.0.bundle.min.js"></script>
+
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+
+    .bi {
+      display: inline-block;
+      vertical-align: -.125em;
+      fill: currentcolor;
+    }
+
+    .em-1 {
+      width: 1em;
+      height: 1em;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container-xxl text-center h-100">
+    <div class="row mb-3">
+      <div class="col text-start border-bottom">
+        <p class="fs-4 fw-light mt-3 mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-wifi em-1"
+            viewBox="0 0 16 16">
+            <path
+              d="M15.384 6.115a.485.485 0 0 0-.047-.736A12.444 12.444 0 0 0 8 3C5.259 3 2.723 3.882.663 5.379a.485.485 0 0 0-.048.736.518.518 0 0 0 .668.05A11.448 11.448 0 0 1 8 4c2.507 0 4.827.802 6.716 2.164.205.148.49.13.668-.049z" />
+            <path
+              d="M13.229 8.271a.482.482 0 0 0-.063-.745A9.455 9.455 0 0 0 8 6c-1.905 0-3.68.56-5.166 1.526a.48.48 0 0 0-.063.745.525.525 0 0 0 .652.065A8.46 8.46 0 0 1 8 7a8.46 8.46 0 0 1 4.576 1.336c.206.132.48.108.653-.065zm-2.183 2.183c.226-.226.185-.605-.1-.75A6.473 6.473 0 0 0 8 9c-1.06 0-2.062.254-2.946.704-.285.145-.326.524-.1.75l.015.015c.16.16.407.19.611.09A5.478 5.478 0 0 1 8 10c.868 0 1.69.201 2.42.56.203.1.45.07.61-.091l.016-.015zM9.06 12.44c.196-.196.198-.52-.04-.66A1.99 1.99 0 0 0 8 11.5a1.99 1.99 0 0 0-1.02.28c-.238.14-.236.464-.04.66l.706.706a.5.5 0 0 0 .707 0l.707-.707z" />
+          </svg> Wi-Fi
+        </p>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col">
+        <div class="input-group">
+          <div class="form-floating">
+            <select class="form-select rounded-0" id="wifi_ssid" aria-label="Wybierz sieć">
+              <option selected>...</option>
+            </select>
+            <label for="wifi_ssid">Wybierz sieć</label>
+          </div>
+          <button class="btn btn-primary rounded-0" type="button" id="wifi_scan_loading_btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+              class="bi bi-hourglass-split" viewBox="0 0 16 16">
+              <path
+                d="M2.5 15a.5.5 0 1 1 0-1h1v-1a4.5 4.5 0 0 1 2.557-4.06c.29-.139.443-.377.443-.59v-.7c0-.213-.154-.451-.443-.59A4.5 4.5 0 0 1 3.5 3V2h-1a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-1v1a4.5 4.5 0 0 1-2.557 4.06c-.29.139-.443.377-.443.59v.7c0 .213.154.451.443.59A4.5 4.5 0 0 1 12.5 13v1h1a.5.5 0 0 1 0 1h-11zm2-13v1c0 .537.12 1.045.337 1.5h6.326c.216-.455.337-.963.337-1.5V2h-7zm3 6.35c0 .701-.478 1.236-1.011 1.492A3.5 3.5 0 0 0 4.5 13s.866-1.299 3-1.48V8.35zm1 0v3.17c2.134.181 3 1.48 3 1.48a3.5 3.5 0 0 0-1.989-3.158C8.978 9.586 8.5 9.052 8.5 8.351z" />
+            </svg>
+          </button>
+          <button class="btn btn-primary rounded-0 d-none" type="button" id="wifi_scan_btn" onclick="wifi_scan()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+              class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z" />
+              <path
+                d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col">
+        <div class="form-floating">
+          <input type="password" class="form-control rounded-0" id="wifi_password">
+          <label for="wifi_password">Hasło</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col col-12 text-start border-bottom">
+        <p class="fs-4 fw-light mt-3 mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+            class="bi bi-list-check em-1" viewBox="0 0 16 16">
+            <path fill-rule="evenodd"
+              d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3.854 2.146a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 3.293l1.146-1.147a.5.5 0 0 1 .708 0zm0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 7.293l1.146-1.147a.5.5 0 0 1 .708 0zm0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0z" />
+          </svg> Urządzenia
+        </p>
+      </div>
+      <div class="col col-12 text-start mt-3 mb-0" id="device-container">
+      </div>
+      <div class="col col-12 text-start mt-0 mb-3">
+        <div class="input-group mb-3" id="new-device">
+          <input type="text" class="form-control rounded-0" id="new-device-name" required>
+          <span class="input-group-text">Id:</span>
+          <input type="text" class="form-control" id="new-device-id" required>
+          <button class="btn btn-primary rounded-0" type="button" onclick="add_new_device()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg em-1" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+            </svg>
+          </button>
+          <div class="invalid-feedback">
+            Nazwa oraz Id są wymagane lub urządzenie już istnieje.
+          </div>
+        </div>
+      </div>
+      <template id="device-template">
+        <div class="input-group mb-3 device">
+          <input type="text" class="form-control rounded-0 device-name" value="${name}">
+          <span class="input-group-text">Id:</span>
+          <input type="text" class="form-control device-id" value="${id}">
+          <button class="btn btn-danger rounded-0" type="button" onclick="remove_device(this)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3 em-1"
+              viewBox="0 0 16 16">
+              <path
+                d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z" />
+            </svg>
+          </button>
+        </div>
+      </template>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col col-12 text-start border-bottom">
+        <p class="fs-4 fw-light mt-3 mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+            class="bi bi-motherboard em-1" viewBox="0 0 16 16">
+            <path
+              d="M11.5 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5Zm2 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5Zm-10 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1h-6Zm0 2a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1h-6ZM5 3a1 1 0 0 0-1 1h-.5a.5.5 0 0 0 0 1H4v1h-.5a.5.5 0 0 0 0 1H4a1 1 0 0 0 1 1v.5a.5.5 0 0 0 1 0V8h1v.5a.5.5 0 0 0 1 0V8a1 1 0 0 0 1-1h.5a.5.5 0 0 0 0-1H9V5h.5a.5.5 0 0 0 0-1H9a1 1 0 0 0-1-1v-.5a.5.5 0 0 0-1 0V3H6v-.5a.5.5 0 0 0-1 0V3Zm0 1h3v3H5V4Zm6.5 7a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-2Z" />
+            <path
+              d="M1 2a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-2H.5a.5.5 0 0 1-.5-.5v-1A.5.5 0 0 1 .5 9H1V8H.5a.5.5 0 0 1-.5-.5v-1A.5.5 0 0 1 .5 6H1V5H.5a.5.5 0 0 1-.5-.5v-2A.5.5 0 0 1 .5 2H1Zm1 11a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v11Z" />
+          </svg> Device Id
+        </p>
+      </div>
+      <div class="col col-12 text-start mt-3 mb-3" id="this-device-container">
+        <span id="device_id"></span>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col">
+        <div class="mb-3">
+          <button type="submit" class="btn btn-primary w-100 rounded-0" onclick="config_save()">Zapisz</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="addThisDeviceModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addThisDeviceModal" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="staticBackdropLabel">Dodaj urządzenie</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-floating">
+              <input type="text" class="form-control rounded-0" id="this-device-name" required>
+              <label for="wifi_password">Nazwa</label>
+            </div>
+            <div class="invalid-feedback text-start">
+              Nazwa jest wymagana.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+            <button type="button" class="btn btn-primary" onclick="add_this_device()">Dodaj</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const deviceId = getDeviceId();
+      var app_config = {};
+      document.querySelector('#device_id').innerHTML = deviceId;
+      const socket = createWebSocket(deviceId, location.host, 'ws');
+      const addThisDeviceModal = new bootstrap.Modal('#addThisDeviceModal');
+
+      function add_this_device() {
+        $('#addThisDeviceModal').addClass('was-validated');
+        const name = $('#this-device-name').val();
+        const id = deviceId;
+        if(add_device(name, id)) {
+          $('#addThisDeviceModal').removeClass('was-validated');
+          $('#this-device-name').val('');
+          addThisDeviceModal.hide();
+          populate_this_sevice();
+        }
+      }
+
+      function add_new_device() {
+        $('#new-device').addClass('was-validated');
+        const name = $('#new-device').find('#new-device-name').val();
+        const id = $('#new-device').find('#new-device-id').val();
+        if(add_device(name, id)) {
+          $('#new-device').removeClass('was-validated');
+          $('#new-device').find('#new-device-name').val('');
+          $('#new-device').find('#new-device-id').val('');
+        }
+
+      }
+
+      function add_device(name, id) {
+        if (!Array.isArray(app_config.devices)) app_config.devices = [];
+
+        if (!app_config.devices.some(d => d.name == name || d.id == id) && name != '' && id != '') {
+          app_config.devices.push({
+            name: name, 
+            id: id
+          });
+          populate_devices(app_config.devices);
+          return true;
+        }
+        return false;
+      }
+
+      function populate_devices(devices) {
+        const template = document.querySelector('#device-template').innerHTML;
+
+        $('#device-container').find('.device').remove().end();
+
+        devices.forEach(device => {
+          const el = $(template.replaceAll('${id}', device.id).replaceAll('${name}', device.name));
+          el.find('button').data('device', device);
+          $('#device-container').append(el);
+        });
+      }
+
+      function populate_this_sevice() {
+        $('#this-device-container').children().remove().end();
+        var el;
+        if (app_config.devices.some(d => d.id == deviceId)) {
+          el = `<span id="device_id">${deviceId}</span>`;
+        } else {
+          el = `<button type="button" class="bg-white border border-0 text-secondary" data-bs-toggle="modal" data-bs-target="#addThisDeviceModal">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg em-1" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+                  </svg> <span id="device_id">${deviceId}</span>
+                </</button>`;
+        }
+        $('#this-device-container').append(el);
+      }
+
+      function remove_device(el) {
+        const device = $(el).data('device');
+        const index = app_config.devices.indexOf(device);
+        app_config.devices.splice(index, 1);
+        
+        populate_devices(app_config.devices);
+        populate_this_sevice();
+      }
+
+      function ghater_devices() {
+        var devices = [];
+        $('#device-container').find('.device').each(() => {
+          devices.push({
+            name: $(this).find('.device-name').val(),
+            id: $(this).find('.device-id').val()
+          });
+        });
+        return devices;
+      }
+
+      function populate_wifi_ssid(networks) {
+        networks.forEach(ssid => {
+          if (ssid == app_config.wifi_ssid) {
+            $('#wifi_ssid').append($('<option selected="selected">', { value: ssid }).text(ssid));
+          } else {
+            $('#wifi_ssid').append($('<option>', { value: ssid }).text(ssid));
+          }
+        });
+      }
+
+      async function load_config() {
+        app_config = JSON.parse(await socket.send('config:get'));
+        console.log(app_config);
+        document.querySelector('#wifi_password').value = app_config.wifi_password;
+
+        populate_wifi_ssid(app_config.wifi_ssid ? [app_config.wifi_ssid] : []);
+        populate_devices(Array.isArray(app_config.devices) ? app_config.devices : []);
+        populate_this_sevice();
+      }
+
+      $('#wifi_ssid').change(() => app_config.wifi_ssid = this.val());
+      $('#wifi_password').change(() => app_config.wifi_password = this.val());
+
+      async function config_save() {
+        await socket.send('config:save', app_config);
+      }
+
+      async function wifi_scan() {
+        $('#wifi_scan_loading_btn').removeClass('d-none');
+        $('#wifi_scan_btn').addClass('d-none');
+
+        $('#wifi_ssid').find('option').remove().end();
+
+        socket.send('wifi_scan')
+          .then(JSON.parse)
+          .then(populate_wifi_ssid)
+          .then((networks) => {
+            $('#wifi_scan_loading_btn').addClass('d-none');
+            $('#wifi_scan_btn').removeClass('d-none');
+          });
+      }
+
+      (async function () {
+        await socket.connect();
+        await load_config();
+        wifi_scan();
+      })();
     </script>
-  </body>
+</body>
+
 </html>
