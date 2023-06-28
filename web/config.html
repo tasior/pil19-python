@@ -285,8 +285,7 @@
       }
 
       async function load_config() {
-        app_config = JSON.parse(await socket.send('config:get'));
-        console.log(app_config);
+        app_config = await socket.send('config:get');
         document.querySelector('#wifi_password').value = app_config.wifi_password;
 
         populate_wifi_ssid(app_config.wifi_ssid ? [app_config.wifi_ssid] : []);
@@ -308,7 +307,6 @@
         $('#wifi_ssid').find('option').remove().end();
 
         socket.send('wifi_scan')
-          .then(JSON.parse)
           .then(populate_wifi_ssid)
           .then((networks) => {
             $('#wifi_scan_loading_btn').addClass('d-none');
@@ -318,6 +316,7 @@
 
       (async function () {
         await socket.connect();
+        socket.on('close', () => console.log('WS CLOSED!!!'));
         await load_config();
         wifi_scan();
       })();

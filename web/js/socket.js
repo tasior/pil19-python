@@ -20,13 +20,12 @@ function createWebSocket(deviceId, host, path) {
             } catch (e) {
                 reject(e);
             }
-
         });
     }
 
     function send(command, data) {
         return new Promise((resolve, reject) => {
-            once(socket, 'message', (ev) => resolve(ev.data, ev));
+            once(socket, 'message', (ev) => resolve(JSON.parse(ev.data)));
             once(socket, 'error', (ev) => reject(ev));
 
             socket.send(JSON.stringify({
@@ -37,8 +36,28 @@ function createWebSocket(deviceId, host, path) {
         });
     }
 
+    function receive(cmd, listener) {
+        socket.addEventListener('message', (ev) => {
+            const data  = JSON.parse(ev.data);
+            if (data.cmd == cmd) {
+                listener(data);
+            }
+        });
+    }
+
+    function on(event, listener) {
+        socket.addEventListener(event, listener);
+    }
+
+    function off(event, listener) {
+        socket.removeEventListener(event, listener);
+    }
+
     return {
         connect,
-        send
+        send,
+        receive,
+        on,
+        off
     }
 }

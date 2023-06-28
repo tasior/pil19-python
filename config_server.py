@@ -36,10 +36,12 @@ def wifi_scan(_):
             scan.add(lan[0].decode())
     return list(scan)
 
-def config_save(config):
+def config_save(cmd):
     global app_config
+    config = cmd['data']
     write_config(config)
     app_config = config
+    return { 'cmd': cmd['cmd'], 'status': 'OK' }
 
 handlers = {
     'config:get': lambda _: app_config,
@@ -49,7 +51,7 @@ handlers = {
 
 def handle_cmd(cmd: dict):
     print(f'handle cmd: {cmd["cmd"]}')
-    return handlers[cmd['cmd']](cmd['data'] if 'data' in cmd else None)
+    return handlers[cmd['cmd']](cmd)
 
 def config_server(config, ssid='PicoW_Pil19', password='admin123', port=80, debug=True):
     global app_config

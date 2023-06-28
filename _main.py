@@ -11,7 +11,8 @@ try:
     print('OK')
     print(f'running {mode} mode')
     config_server(config) if mode == 'config' else main_server(config)
-except:
+except Exception as e:
     print('exception!!!')
+    print(e)
     print('rebooting')
     # soft_reset()
