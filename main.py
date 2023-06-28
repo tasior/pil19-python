@@ -10,8 +10,8 @@ try:
     mode = config.get('mode', 'config')
     print('OK')
     print(f'running {mode} mode')
-    config_server(config) if mode == 'config' else main_server(config)
+    config_server(config, debug=False) if mode == 'config' else main_server(config)
 except:
     print('exception!!!')
     print('rebooting')
-    # soft_reset()
+    soft_reset()

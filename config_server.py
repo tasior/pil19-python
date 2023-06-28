@@ -5,7 +5,9 @@ from config import write_config
 import json
 
 def wlan_callback(event):
-    print(event)
+    global wlan
+    if(event == 'connected'):
+        print('access point ready: {}'.format(wlan.ip()))
 
 wlan = WiFi_AP(wlan_callback)
 app = Microdot()
@@ -17,7 +19,7 @@ def index(request):
 
 @app.route('/web/<path:path>')
 def static(request, path):
-    return send_file('/web/{}'.format(path))
+    return send_file('/web/{}'.format(path), max_age=31556926)
 
 @app.route('/ws')
 @with_websocket

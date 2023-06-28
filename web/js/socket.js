@@ -8,7 +8,7 @@ function once(object, type, callback) {
 }
 
 function createWebSocket(deviceId, host, path) {
-    var socket = new WebSocket(`ws://${host}/${path}`);;
+    var socket;
 
     function connect() {
         return new Promise((resolve, reject) => {
