@@ -46,7 +46,7 @@ def config_save(cmd):
 handlers = {
     'config:get': lambda _: app_config,
     'config:save': config_save,
-    'wifi_scan': wifi_scan
+    'wifi:scan': wifi_scan
 }
 
 def handle_cmd(cmd: dict):
