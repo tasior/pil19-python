@@ -1,0 +1,27 @@
+.program pil19_send_data
+
+.wrap_target
+    pull block
+    out null, 8         ; ignore 8 bits (command is only 24 bits)
+    set pins, 0         ; set data pin to low
+    wait 0 pin, 0       ; wait for rx pin to low
+    nop [26]            ; wait 270us
+    ; send data [total 200us]
+    next_bit:
+        set pins, 1     ; set data pin to high      [10us]
+        out x, 1        ; read next bit             [10us]
+        jmp !x bit_0    ; if x == 0 jump to bit_0   [10us]
+    bit_1:
+        nop [9]         ; keep data pin hi for 130us (100us + 30us)
+        set pins, 0     ; set data pin low [10us]
+        nop [3]         ; keep data pin low for 70us (40us + 10us(set pins, 0) + 20us (2x jmp))
+        jmp bit_end     ; jump to next bit [10us]
+    bit_0:
+        nop [3]         ; keep data pin hi for 70us (40us + 30us)
+        set pins, 0     ; set data pin low [10us]
+        nop [10]        ; keep data pin low for 130us (110us + 10us(set pins, 0) + 10us (jmp))
+    bit_end:
+        jmp !osre next_bit ; send next bit if available [10us]
+    ; end send data
+    set pins, 1         ; no more data, set data pin to high
+.wrap
