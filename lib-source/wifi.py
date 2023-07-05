@@ -6,6 +6,7 @@ class WiFi:
         self.retries = retries
         self.cb = cb
         self.wlan = network.WLAN(network.STA_IF)
+        self.wlan.active(True)
         self.wlan.config(pm = 0xa11140)
 
     def scan(self):

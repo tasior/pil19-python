@@ -17,13 +17,13 @@ app_config = {}
 def index(request):
     return send_file('/web/config.html')
 
-@app.route('/web/<path:path>')
+@app.route('/<path:path>')
 def static(request, path):
     return send_file('/web/{}'.format(path), max_age=31556926)
 
 @app.route('/ws')
 @with_websocket
-async def echo(request, ws):
+async def ws(request, ws):
     while True:
         cmd = await ws.receive()
         response = handle_cmd(json.loads(cmd))

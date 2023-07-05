@@ -7,10 +7,10 @@ try:
     print('boot...')
     print('read config...', end='')
     config = read_config()
-    mode = config.get('mode', 'config')
+    mode = config.get('mode', 'admin')
     print('OK')
     print(f'running {mode} mode')
-    config_server(config) if mode == 'config' else main_server(config)
+    config_server(config) if mode == 'admin' else main_server(config)
 except Exception as e:
     print('exception!!!')
     print(e)
