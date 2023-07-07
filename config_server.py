@@ -2,6 +2,7 @@ from wifi import WiFi_AP
 from microdot_asyncio import Microdot, send_file
 from microdot_asyncio_websocket import with_websocket
 from config import write_config
+from machine import soft_reset
 import json
 
 def wlan_callback(event):
@@ -17,10 +18,6 @@ app_config = {}
 def index(request):
     return send_file('/web/config.html')
 
-@app.route('/<path:path>')
-def static(request, path):
-    return send_file('/web/{}'.format(path), max_age=31556926)
-
 @app.route('/ws')
 @with_websocket
 async def ws(request, ws):
@@ -28,6 +25,10 @@ async def ws(request, ws):
         cmd = await ws.receive()
         response = handle_cmd(json.loads(cmd))
         await ws.send(json.dumps(response))
+
+@app.route('/<path:path>')
+def static(request, path):
+    return send_file('/web/{}'.format(path), max_age=31556926)
 
 def wifi_scan(_):
     scan = set()
@@ -46,7 +47,8 @@ def config_save(cmd):
 handlers = {
     'config:get': lambda _: app_config,
     'config:save': config_save,
-    'wifi:scan': wifi_scan
+    'wifi:scan': wifi_scan,
+    'system:reset': lambda _: soft_reset()
 }
 
 def handle_cmd(cmd: dict):

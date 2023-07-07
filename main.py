@@ -14,4 +14,4 @@ try:
 except:
     print('exception!!!')
     print('rebooting')
-    soft_reset()
+    # soft_reset()

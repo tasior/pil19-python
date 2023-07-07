@@ -18,10 +18,6 @@ app_config = {}
 def index(request):
     return send_file('/web/index.html')
 
-@app.route('/<path:path>')
-def static(request, path):
-    return send_file('/web/{}'.format(path), max_age=31556926)
-
 @app.route('/ws')
 @with_websocket
 async def ws(request: Request, ws):
@@ -30,6 +26,10 @@ async def ws(request: Request, ws):
         cmd = await ws.receive()
         response = handle_cmd(json.loads(cmd))
         await ws.send(json.dumps(response))
+
+@app.route('/<path:path>')
+def static(request, path):
+    return send_file('/web/{}'.format(path), max_age=31556926)
 
 def config_save(cmd):
     global app_config
