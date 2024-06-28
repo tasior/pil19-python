@@ -1,17 +1,17 @@
 from machine import Pin, Timer
 import rp2
 import time
-from pil19 import pil19_init, pil19_send, pil19_command
+from pil19 import pil19_init, pil19_send, pil19_command, CMD_DOWN, CMD_UP, CMD_DOWN_LAMEL, CMD_STOP
 
-rx_base = 6
-tx_base = 7
-dat_base = 8
+rx_base = 13
+tx_base = 14
+dat_base = 15
 
 pil19_init(0, rx_base, tx_base, dat_base)
 
-# pil19_send(pil19_command(0x87, 0xc0))
-# time.sleep(3)
-pil19_send(pil19_command(0x87, 0x90))
+pil19_send(pil19_command(0x87, CMD_DOWN))
+time.sleep(3)
+pil19_send(pil19_command(0x87, CMD_STOP))
 for _ in range(10):
-    pil19_send(pil19_command(0x87, 0xd0))
-pil19_send(pil19_command(0x87, 0xa0))
+    pil19_send(pil19_command(0x87, CMD_DOWN_LAMEL))
+pil19_send(pil19_command(0x87, CMD_UP))

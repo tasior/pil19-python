@@ -63,16 +63,15 @@
         <div class="input-group">
           <div class="form-floating">
             <select class="form-select rounded-0" id="wifi_ssid" aria-label="Wybierz sieć">
-              <option selected>...</option>
             </select>
             <label for="wifi_ssid">Wybierz sieć</label>
           </div>
-          <button class="btn btn-warning rounded-0" type="button" id="wifi_scan_loading_btn">
+          <button class="btn btn-warning rounded-0 d-none" type="button" id="wifi_scan_loading_btn">
             <div class="spinner-border em-1" role="status" style="--bs-spinner-border-width: 0.1em;">
               <span class="visually-hidden">Loading...</span>
             </div>
           </button>
-          <button class="btn btn-warning rounded-0 d-none" type="button" id="wifi_scan_btn" onclick="wifi_scan()">
+          <button class="btn btn-warning rounded-0" type="button" id="wifi_scan_btn" onclick="wifi_scan()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
               <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z" />
               <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z" />
@@ -172,7 +171,12 @@
       </div>
       <div class="col">
         <div class="mb-3">
-          <button type="submit" class="btn btn-warning w-100 rounded-0" onclick="config_save()">Zapisz</button>
+          <button class="btn btn-warning w-100 rounded-0 d-none" type="button" id="config_save_loading_btn">
+            <div class="spinner-border em-1" role="status" style="--bs-spinner-border-width: 0.1em;">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </button>
+          <button type="submit" class="btn btn-warning w-100 rounded-0" onclick="config_save()" id="config_save_btn">Zapisz</button>
         </div>
       </div>
     </div>
@@ -234,7 +238,8 @@
       if (!app_config.devices.some(d => d.name == name || d.id == id) && name != '' && id != '') {
         app_config.devices.push({
           name: name,
-          id: id
+          id: id,
+          status: 'authorized'
         });
         app_config_changed = true;
         populate_devices(app_config.devices);
@@ -257,7 +262,7 @@
         );
       });
 
-      if(app_config.devices.findIndex(e => e.id == deviceId) > -1) {
+      if(devices.findIndex(e => e.id == deviceId) > -1) {
         document.querySelector('#this-device-container').classList.add('d-none');
       } else {
         document.querySelector('#this-device-container').classList.remove('d-none');
@@ -289,7 +294,7 @@
 
     async function load_config() {
       app_config = await socket.send(cmd.config_get);
-      document.querySelector('#wifi_password').value = app_config.wifi_password;
+      document.querySelector('#wifi_password').value = app_config.wifi_password ? app_config.wifi_password : '';
       document.querySelector('#mode').value = app_config.mode;
 
       populate_wifi_ssid(app_config.wifi_ssid ? [app_config.wifi_ssid] : []);
@@ -310,8 +315,12 @@
     }
 
     async function config_save() {
+      document.querySelector('#config_save_loading_btn').classList.remove('d-none')
+      document.querySelector('#config_save_btn').classList.add('d-none')
       await socket.send(cmd.config_save, app_config);
       app_config_changed = false;
+      document.querySelector('#config_save_loading_btn').classList.add('d-none')
+      document.querySelector('#config_save_btn').classList.remove('d-none')
     }
 
     async function wifi_scan() {
@@ -334,7 +343,6 @@
         socket.on('close', () => alert('Socket closed'));
         socket.on('error', () => alert('Socket error'));
         await load_config();
-        wifi_scan();
         document.querySelector('#loading-container').classList.add('d-none');
         document.querySelector('#config-container').classList.remove('d-none');
       } catch(e) {

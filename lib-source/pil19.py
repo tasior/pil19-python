@@ -9,7 +9,7 @@ __rx_pin__: Pin
 __timer__: Timer
 __sm__: StateMachine
 
-__min_sleep_s__ = const(0.25)
+__min_sleep_s__ = const(0.3)
 __min_sleep__s_lamel__ = const(1.25)
 
 CMD_STOP = const(0x90)

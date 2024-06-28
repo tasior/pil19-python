@@ -59,7 +59,27 @@
 </head>
 
 <body style="--bs-body-font-weight: 300;">
-  <div class="container-xxl text-center h-100 position-relative">
+  <div class="container-xxl text-center h-100" id="loading-container">
+    <div class="row mb-3">
+      <div class="col text-start border-bottom p-5">
+        <div class="d-flex align-items-center">
+          <span>Loading... <span class="text-danger error-message d-none">Error</span></span>
+          <div class="spinner-border ms-auto em-1" role="status" aria-hidden="true" style="--bs-spinner-border-width: 0.1em;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="auth-container" class="container-xxl text-center h-100 position-relative d-none">
+    <div class="row mb-3">
+      <div class="col text-center border-bottom p-5">
+        <p>Urządznie nie jest zautoryzowane.</p>
+        <p>Device Id: <span data-device-id="display"></span></p>
+        <button id="request-device-authorization" class="btn btn-warning d-none" onclick="request_device_authorization()">Dodaj do urządzenie</button>
+        <p id="pending-autorization" class="d-none">Oczekiwanie na autoryzację</p>
+      </div>
+    </div>
+  </div>
+  <div id="main-container" class="container-xxl text-center h-100 position-relative d-none">
     <div id="pages" class="carousel slide h-100" data-bs-animation="50">
       <div class="carousel-inner h-100">
         <div class="carousel-item h-100" data-page="pilot">
@@ -537,10 +557,13 @@
         </button>
       </div>
 
-      <button class="btn btn-warning" type="button" data-bs-toggle="offcanvas" data-bs-target="#menu" aria-controls="menu">
+      <button class="btn btn-warning position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#menu" aria-controls="menu">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list" viewBox="0 0 16 16">
           <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z" />
         </svg>
+        <div class="spinner-grow spinner-grow-sm text-danger position-absolute top-0 start-100 translate-middle" role="status" style="--bs-spinner-width: 0.5rem; --bs-spinner-height: 0.5rem;">
+          <span class="visually-hidden">Loading...</span>
+        </div>
       </button>
     </div>
   </div>
@@ -578,7 +601,13 @@
         <a href="#" class="list-group-item list-group-item-action" data-bs-target="#pages" data-bs-slide-to="4">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16">
             <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z" />
-          </svg> Ustawienia
+          </svg>
+          <span class="position-relative">
+            <div class="spinner-grow spinner-grow-sm text-danger position-absolute top-0 start-100 translate-middle m-1" role="status" style="--bs-spinner-width: 0.5rem; --bs-spinner-height: 0.5rem;">
+              <span class="visually-hidden">Loading...</span>
+            </div> Ustawienia
+          </span>
+          </span>
         </a>
       </div>
     </div>
@@ -586,8 +615,11 @@
 
   <script>
     const deviceId = getDeviceId();
+    document.querySelectorAll('[data-device-id="display"]').forEach(e => e.innerHTML = deviceId);
+
     var app_config = {};
-    const socket = createWebSocket(deviceId, location.host, 'ws');
+    // const socket = createWebSocket(deviceId, location.host, 'ws');
+    const socket = createWebSocket(deviceId, `192.168.68.115`, `ws?deviceId=${deviceId}`);
 
     const menu = new bootstrap.Offcanvas('#menu');
 
@@ -628,11 +660,9 @@
       pilotChannelLabel.querySelector('.channel-name').innerHTML = pilotChannel.querySelector('option:checked').getAttribute('data-channel-name');
     });
 
-
-
-
-
     const cmd = {
+      auth_check: 'auth:check',
+      auth_request: 'auth:request',
       config_get: 'config:get',
       config_save: 'config:save',
     };
@@ -642,10 +672,41 @@
       console.log(app_config);
     }
 
+    async function request_device_authorization() {
+      document.querySelector('#request-device-authorization').classList.add('d-none')
+      document.querySelector('#pending-autorization').classList.remove('d-none')
+      await socket.send(cmd.auth_request)
+    }
+
     (async function () {
       await socket.connect();
       socket.on('close', () => console.log('WS CLOSED!!!'));
-      await load_config();
+
+      const auth_response = await socket.send(cmd.auth_check);
+      console.log(auth_response)
+      if ( auth_response.status == 'ERROR' ) {
+        // handle unautorized device
+        document.querySelector('#loading-container .error-message').innerHTML = 'Error: ' + auth_response.error_message;
+        document.querySelector('#loading-container .error-message').classList.remove('d-none');
+        if (auth_response.error_code == 401) {
+          setTimeout(() => {
+            if(auth_response.device != null && auth_response.device.id == deviceId) {
+              document.querySelector('#pending-autorization').classList.remove('d-none')
+            } else {
+              document.querySelector('#request-device-authorization').classList.remove('d-none')
+            }
+
+            document.querySelector('#loading-container').classList.add('d-none');
+            document.querySelector('#auth-container').classList.remove('d-none');
+          }, 1000);
+        }
+      } else {
+        // initialize
+        document.querySelector('#loading-container').classList.add('d-none');
+        document.querySelector('#main-container').classList.remove('d-none');
+
+        await load_config();
+      }
     })();
   </script>
 </body>
