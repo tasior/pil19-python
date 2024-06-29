@@ -1,3 +1,8 @@
+try:
+    import uasyncio as asyncio
+except ImportError:
+    import asyncio
+
 from wifi import WiFi
 from microdot_asyncio import Microdot, send_file, Request, abort
 from microdot_asyncio_websocket import with_websocket
@@ -16,7 +21,7 @@ def wlan_callback(event):
     if(event == 'connected'):
         print('[WiFi] IP: {}'.format(wlan.ip()))
 
-wlan = WiFi(cb=wlan_callback)
+wlan = WiFi(cb=wlan_callback, retries=30)
 app = Microdot()
 app_config = {}
 
@@ -85,14 +90,23 @@ def handle_cmd(device, auth: bool, cmd: dict):
             return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': e.errno, 'error_message': e.strerror }
         except Exception as e:
             import sys
-            sys.print_exception(e)
+            sys.print_exception(e) # type: ignore
             return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': 0, 'error_message': str(e) }
     else:
         return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': 401, 'error_message': 'Unauthorized device', 'device': device }
+
+async def main(port, debug):
+    await app.start_server(port=port,debug=debug)
 
 def main_server(config, port=80, debug=True):
     global app_config, enable_debug
     app_config = config
     enable_debug = debug
-    wlan.connect(app_config['wifi_ssid'], app_config['wifi_password'])
-    app.run(port=port, debug=debug)
+    try:
+        wlan.connect(app_config['wifi_ssid'], app_config['wifi_password'])    
+        asyncio.run(main(port=port, debug=debug))
+    finally:
+        print('finally!!!')
+        if wlan.is_connected():
+            wlan.disconnect()
+        _ = asyncio.new_event_loop()
