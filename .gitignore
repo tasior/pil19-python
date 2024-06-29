@@ -8,3 +8,5 @@ __pycache__/
 
 /lib/*.py
 /lib-source/*.mpy
+
+.config

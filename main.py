@@ -18,12 +18,7 @@ def on_wlan(wlan: WiFi, event, data = None):
         print('[Wlan] Connected. IP: {}'.format(wlan.ip()))
 
 async def main(wlan: WiFi, server, cron):
-    print('[Main] Initializing WLAN...')
-
-    if wlan.connect(config['wifi_ssid'], config['wifi_password']):
-        print('OK')
-    else:
-        raise RuntimeError('Cannot connect to wifi')
+    pass
 
 try:
     print('[Main] Boot')
@@ -31,9 +26,15 @@ try:
     config = read_config()
     mode = config.get('mode', 'admin')
     print('OK')
+    print('[Main] Mode: {}'.format(mode))
     
+    print('[Main] Initializing WLAN...')
     wlan = WiFi(mode=WLAN_MODE_AP if config == MODE_ADMIN else WLAN_MODE_IF)
     wlan.add_listener(on_wlan)
+    wlan_ssid = config['wifi_ap_ssid'] if mode == MODE_ADMIN else config['wifi_ssid']
+    wlan_password = config['wifi_ap_password'] if mode == MODE_ADMIN else config['wifi_password']
+    if not wlan.connect(wlan_ssid, wlan_password):
+        raise RuntimeError('Cannot connect to wifi')
 
     asyncio.run(main(wlan=wlan, server=None, cron=None))
 except Exception as e:
