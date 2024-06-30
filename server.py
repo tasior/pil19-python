@@ -1,0 +1,46 @@
+from microdot_asyncio import Microdot, send_file, Request
+from microdot_asyncio_websocket import with_websocket
+import json
+
+class IServer:
+        
+    @staticmethod
+    async def route_static(request: Request, path):
+        return send_file('/web/{}'.format(path), max_age=31556926)
+
+    def create_route_index(self, index_path):
+        async def route_index(request: Request):
+            return send_file(index_path)
+        return route_index
+    
+    def create_ws_route(self):
+        async def ws_route(request: Request, ws):
+            while True:
+                cmd = await ws.receive()
+                if type(cmd) is str:
+                    response = self.handle_cmd(request, json.loads(cmd))
+                    await ws.send(json.dumps(response))
+        return ws_route
+
+    def __init__(self, config, wlan, port, index_path) -> None:
+        self.app = Microdot()
+        self.config = config
+        self.wlan = wlan
+        self.port = port
+        self.is_debug_enabled = config.get('enable_debug', True) == True
+
+        self.app.route('/')(self.create_route_index(index_path=index_path))
+        ws_route = self.create_ws_route()
+        self.app.route('/ws')(with_websocket(ws_route))
+        self.app.route('/<path:path>')(IServer.route_static)
+
+    def handle_cmd(self, request: Request, cmd):
+        pass
+
+    async def run(self):
+        await self.app.start_server(port=self.port, debug=self.is_debug_enabled)
+    
+    def debug(self, message):
+        if self.is_debug_enabled: print(message)
+
+    

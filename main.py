@@ -5,6 +5,7 @@ from time import sleep
 
 from config import read_config, MODE_ADMIN
 from wifi import WiFi, WLAN_MODE_AP, WLAN_MODE_IF, EVENT_CONNECTING, EVENT_CONNECTED, EVENT_CONNECTION_ERROR, EVENT_DISCONNECT
+from server_app import AppServer
 # from config_server import config_server
 # from main_server import main_server
 
@@ -15,14 +16,14 @@ def on_wlan(wlan: WiFi, event, data = None):
     if event == EVENT_CONNECTED:
         print('[Wlan] Connected. IP: {}'.format(wlan.ip()))
 
-async def server(i):
-    try:
-        while True:
-            print('[Server] loop {}'.format(i))
-            await asyncio.sleep(2)
-            asyncio.create_task(server(2))
-    except asyncio.CancelledError:
-        print('server task cancelled')
+# async def server(i):
+#     try:
+#         while True:
+#             print('[Server] loop {}'.format(i))
+#             await asyncio.sleep(2)
+#             asyncio.create_task(server(2))
+#     except asyncio.CancelledError:
+#         print('server task cancelled')
 
 async def cron():
     while True:
@@ -51,9 +52,13 @@ try:
     if not wlan.connect(wlan_ssid, wlan_password):
         raise RuntimeError('Cannot connect to wifi')
     
+    print('[Main] Initializing server...')
+    server = AppServer(config=config, wlan=wlan, port=80, index_path='/web/index.html')
+
+    print('[Main] Initializing cron...')
     config_cron = read_config(b'./.config_cron')
 
-    asyncio.run(main(server_coro=server(1), cron_coro=cron()))
+    asyncio.run(main(server_coro=server.run(), cron_coro=cron()))
 except Exception as e:
     print('[Main] Exception')
     sys.print_exception(e) # type: ignore

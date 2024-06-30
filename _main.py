@@ -1,6 +1,6 @@
 from config import read_config
 from config_server import config_server
-from main_server import main_server
+from server_app import main_server
 from machine import soft_reset
 
 try:
