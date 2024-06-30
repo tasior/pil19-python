@@ -55,7 +55,7 @@ class WiFi:
             self.wlan.deinit()
         else:
             self.wlan.disconnect()
-        self.fire(self, EVENT_DISCONNECT)
+        self.fire(EVENT_DISCONNECT)
 
     def is_connected(self):
         return self.wlan.status() == network.STAT_GOT_IP

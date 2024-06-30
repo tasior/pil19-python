@@ -1,7 +1,7 @@
 import json
 
-MODE_ADMIN = b'admin'
-MODE_APP = b'app'
+MODE_ADMIN = 'admin'
+MODE_APP = 'app'
 
 def read_config(file = b'./.config') -> dict:
     try:
