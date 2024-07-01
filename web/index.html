@@ -512,7 +512,7 @@
                     </div>
                   </div>
                   <div class="col col-4 bg-secondary-subtle py-2 text-end">
-                    <button class="btn p-2">
+                    <button class="btn p-2" onclick="set_time()">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat em-1" viewBox="0 0 16 16">
                         <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
                         <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
@@ -521,7 +521,8 @@
                   </div>
                   <div class="col col-12 bg-secondary-subtle mt-0">
                     <div class="border-top p-3">
-                      23:03 08/07/2023
+                      <strong>Czas urządzenia:</strong> <span id="board_time"></span><br>
+                      <strong>Aktualny czas:</strong> <span id="device_time"></span>
                     </div>
                   </div>
                 </div>
@@ -643,15 +644,12 @@
         submenu.classList.remove('d-none');
     }
 
-    function init() {
+    (() => {
       document.querySelectorAll('#menu [data-bs-slide-to]').forEach(e => e.classList.remove('active'));
       document.querySelector('#menu [data-bs-slide-to="' + pagesCarousel._getItemIndex(pagesCarousel._getActive()) + '"]').classList.add('active');
 
       toggleSubMenu();
-    }
-
-    init();
-
+    })(); // init menu
 
     const pilotChannel = document.querySelector('#pilot-channel');
     const pilotChannelLabel = document.querySelector('#pilot-display');
@@ -663,9 +661,16 @@
     const cmd = {
       auth_check: 'auth:check',
       auth_request: 'auth:request',
+      auth_requested: 'auth:requested',
       config_get: 'config:get',
       config_save: 'config:save',
+      system_time: 'system:time',
+      system_set_time: 'system:set_time',
     };
+
+    async function set_time() {
+      await socket.send(cmd.system_set_time, Math.floor(Date.now() / 1000));
+    }
 
     async function load_config() {
       app_config = await socket.send(cmd.config_get);
@@ -682,7 +687,12 @@
       await socket.connect();
       socket.on('close', () => console.log('WS CLOSED!!!'));
       socket.on('message', (e) => console.log('WS MESSAGE', e.data));
-      socket.listen('auth:requested', (cmd, data) => console.log('auth:requested', cmd, data))
+      socket.listen(cmd.auth_requested, (cmd, data) => console.log('auth:requested', cmd, data))
+      socket.listen(cmd.system_time, (cmd, data) => {
+        console.log(cmd, data);
+        document.querySelector('#board_time').innerHTML = (new Date(data.data * 1000)).toLocaleString();
+        document.querySelector('#device_time').innerHTML = (new Date()).toLocaleString();
+      });
 
       const auth_response = await socket.send(cmd.auth_check);
       console.log(auth_response)

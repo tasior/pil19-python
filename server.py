@@ -18,10 +18,15 @@ class IServer:
         async def ws_route(request: Request, ws: WebSocket):
             self.ws_clients.append(ws)
             while True:
-                cmd = await ws.receive()
-                if type(cmd) is str:
-                    response = await self.handle_cmd(request, json.loads(cmd))
-                    await ws.send(json.dumps(response))
+                try:
+                    cmd = await ws.receive()
+                    if type(cmd) is str:
+                        response = await self.handle_cmd(request, json.loads(cmd))
+                        await ws.send(json.dumps(response))
+                except OSError as exc:
+                    if exc.errno in [32, 54, 104]:  # pragma: no cover
+                        self.ws_clients.remove(ws)
+                        raise
         return ws_route
 
     def __init__(self, config, pil19: Pil19, wlan, port, index_path) -> None:
@@ -43,8 +48,6 @@ class IServer:
 
     async def broadcast(self, message):
         for ws in self.ws_clients:
-            self.debug('[Server] broadcast')
-            self.debug(ws)
             await ws.send(json.dumps(message))
 
     async def run(self):

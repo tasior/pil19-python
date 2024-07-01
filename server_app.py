@@ -2,6 +2,8 @@ from server import IServer
 from microdot_asyncio import Request
 from config import write_config
 from machine import RTC
+import uasyncio as asyncio
+import time
 
 class AppServer(IServer):
 
@@ -11,7 +13,23 @@ class AppServer(IServer):
             'auth:check': self.cmd_auth_check,
             'auth:request': self.cmd_auth_request,
             'config:get': self.cmd_config_get,
+            'system:set_time': self.cmd_system_set_time,
         }
+        self.rtc = RTC()
+
+    async def run(self):
+        asyncio.create_task(self.broadcast_time(self.rtc))
+        return await super().run()
+
+    async def broadcast_time(self, rtc: RTC):
+        while True:
+            await self.broadcast({ 'cmd': 'system:time', 'status': 'OK', 'data': time.time() })
+            await asyncio.sleep(1)
+
+    async def cmd_system_set_time(self, cmd):
+        timestamp = cmd['data']
+        self.rtc.datetime(time.gmtime(timestamp))
+        return 'OK'
 
     async def cmd_auth_check(self, cmd):
         return 'Authorized'

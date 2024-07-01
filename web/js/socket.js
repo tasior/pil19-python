@@ -23,6 +23,10 @@ function createWebSocket(deviceId, host, path) {
         });
     }
 
+    function close() {
+        socket.close();
+    }
+
     function send(command, data) {
         return new Promise((resolve, reject) => {
             once(socket, 'message', (ev) => resolve(JSON.parse(ev.data)));
@@ -55,6 +59,7 @@ function createWebSocket(deviceId, host, path) {
 
     return {
         connect,
+        close,
         send,
         listen,
         on,
