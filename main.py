@@ -6,8 +6,7 @@ from time import sleep
 from config import read_config, MODE_ADMIN
 from wifi import WiFi, WLAN_MODE_AP, WLAN_MODE_IF, EVENT_CONNECTING, EVENT_CONNECTED, EVENT_CONNECTION_ERROR, EVENT_DISCONNECT
 from server_app import AppServer
-# from config_server import config_server
-# from main_server import main_server
+from server_admin import AdminServer
 
 wlan: WiFi | None = None
 
@@ -28,7 +27,7 @@ def on_wlan(wlan: WiFi, event, data = None):
 async def cron():
     while True:
         print('[Cron] loop')
-        await asyncio.sleep(5)
+        await asyncio.sleep(50)
 
 
 async def main(server_coro, cron_coro):
@@ -53,7 +52,10 @@ try:
         raise RuntimeError('Cannot connect to wifi')
     
     print('[Main] Initializing server...')
-    server = AppServer(config=config, wlan=wlan, port=80, index_path='/web/index.html')
+    if mode == MODE_ADMIN:
+        server = AdminServer(config=config, wlan=wlan, port=80, index_path='/web/config.html')
+    else:
+        server = AppServer(config=config, wlan=wlan, port=80, index_path='/web/index.html')
 
     print('[Main] Initializing cron...')
     config_cron = read_config(b'./.config_cron')
@@ -68,5 +70,6 @@ finally:
         print('[Main] Wlan disconnect')
         wlan.disconnect()
     _ = asyncio.new_event_loop()
-    # sleep(5)
+    sleep(5)
     # soft_reset()
+    print('[Main] End')

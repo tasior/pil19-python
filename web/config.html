@@ -155,10 +155,19 @@
       <div class="col col-12 text-start mt-3 mb-3">
         <div class="form-floating">
           <select class="form-select rounded-0" id="mode" aria-label="Wybierz tryb" onchange="change_mode(this.value)">
-            <option value="admin">Admin</option>
-            <option value="main">Pilot</option>
+            <option value="admin" selected>Admin</option>
+            <option value="app">Pilot</option>
           </select>
           <label for="mode">Wybierz tryb</label>
+        </div>
+      </div>
+      <div class="col col-12 text-start mt-3 mb-3">
+        <div class="form-floating">
+          <select class="form-select rounded-0" id="debug" aria-label="Wybierz tryb" onchange="change_debug(this.value)">
+            <option value="1">Tak</option>
+            <option value="0">Nie</option>
+          </select>
+          <label for="mode">Debug mode</label>
         </div>
       </div>
     </div>
@@ -209,7 +218,8 @@
 
     document.querySelector('#this-device-id').value = deviceId;
 
-    const socket = createWebSocket(deviceId, '192.168.4.1', 'ws');
+    // const socket = createWebSocket(deviceId, '192.168.4.1', 'ws');
+    const socket = createWebSocket(deviceId, window.location.host, 'ws');
     const cmd = {
       config_get: 'config:get',
       config_save: 'config:save',
@@ -273,9 +283,11 @@
     }
 
     function remove_device(deviceId) {
+      console.log(JSON.stringify(app_config.devices));
       const index = app_config.devices.findIndex(e => e.id == deviceId);
       app_config.devices.splice(index, 1);
       app_config_changed = true;
+      console.log(JSON.stringify(app_config.devices));
 
       populate_devices(app_config.devices);
     }
@@ -287,18 +299,35 @@
       });
     }
 
+    function populate_debug(enable_debug) {
+      document.querySelectorAll('#debug option').forEach(e => e.removeAttribute('selected'));
+
+      document.querySelector("#debug option[value='" + (enable_debug ? "1" : "0") + "']").setAttribute('selected', true);
+    }
+
     function change_mode(mode) {
       app_config.mode = mode;
       app_config_changed = true;
     }
 
-    async function load_config() {
-      app_config = await socket.send(cmd.config_get);
-      document.querySelector('#wifi_password').value = app_config.wifi_password ? app_config.wifi_password : '';
-      document.querySelector('#mode').value = app_config.mode;
+    function change_debug(debug) {
+      app_config.enable_debug = debug == "1";
+      app_config_changed = true;
+    }
 
-      populate_wifi_ssid(app_config.wifi_ssid ? [app_config.wifi_ssid] : []);
-      populate_devices(Array.isArray(app_config.devices) ? app_config.devices : []);
+    async function load_config() {
+      config_res = await socket.send(cmd.config_get);
+      if (config_res.status == 'OK') {
+        app_config = config_res.data;
+        document.querySelector('#wifi_password').value = app_config.wifi_password ? app_config.wifi_password : '';
+        document.querySelector('#mode').value = app_config.mode;
+
+        populate_wifi_ssid(app_config.wifi_ssid ? [app_config.wifi_ssid] : []);
+        populate_devices(Array.isArray(app_config.devices) ? app_config.devices : []);
+        populate_debug(app_config.enable_debug ? true : false);
+      } else {
+        throw Exception(config_res);
+      }
     }
 
     document.querySelector('#wifi_ssid').addEventListener('change', (e) => {
@@ -330,6 +359,7 @@
       document.querySelectorAll('#wifi_ssid option').forEach(e => e.remove());
 
       await socket.send(cmd.wifi_scan)
+        .then(res => res.data)
         .then(populate_wifi_ssid)
         .then((networks) => {
           document.querySelector('#wifi_scan_loading_btn').classList.add('d-none');

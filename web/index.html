@@ -618,8 +618,8 @@
     document.querySelectorAll('[data-device-id="display"]').forEach(e => e.innerHTML = deviceId);
 
     var app_config = {};
-    // const socket = createWebSocket(deviceId, location.host, 'ws');
-    const socket = createWebSocket(deviceId, `192.168.68.115`, `ws?deviceId=${deviceId}`);
+    const socket = createWebSocket(deviceId, window.location.host, `ws?deviceId=${deviceId}`);
+    // const socket = createWebSocket(deviceId, `192.168.68.115`, `ws?deviceId=${deviceId}`);
 
     const menu = new bootstrap.Offcanvas('#menu');
 
