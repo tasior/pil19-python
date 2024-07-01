@@ -4,6 +4,7 @@ from machine import soft_reset
 from time import sleep
 
 from config import read_config, MODE_ADMIN
+from pil19 import Pil19
 from wifi import WiFi, WLAN_MODE_AP, WLAN_MODE_IF, EVENT_CONNECTING, EVENT_CONNECTED, EVENT_CONNECTION_ERROR, EVENT_DISCONNECT
 from server_app import AppServer
 from server_admin import AdminServer
@@ -51,11 +52,17 @@ try:
     if not wlan.connect(wlan_ssid, wlan_password):
         raise RuntimeError('Cannot connect to wifi')
     
+    rx_base = 13
+    tx_base = 14
+    dat_base = 15
+    print('[Main] Initializing Pil19(0, rx: {}, tx: {}, dat: {})...'.format(rx_base, tx_base, dat_base))
+    pil19 = Pil19(0, rx_base, tx_base, dat_base)
+    
     print('[Main] Initializing server...')
     if mode == MODE_ADMIN:
-        server = AdminServer(config=config, wlan=wlan, port=80, index_path='/web/config.html')
+        server = AdminServer(config=config, pil19=pil19, wlan=wlan, port=80, index_path='/web/config.html')
     else:
-        server = AppServer(config=config, wlan=wlan, port=80, index_path='/web/index.html')
+        server = AppServer(config=config, pil19=pil19, wlan=wlan, port=80, index_path='/web/index.html')
 
     print('[Main] Initializing cron...')
     config_cron = read_config(b'./.config_cron')
@@ -70,6 +77,6 @@ finally:
         print('[Main] Wlan disconnect')
         wlan.disconnect()
     _ = asyncio.new_event_loop()
-    sleep(5)
+    # sleep(5)
     # soft_reset()
     print('[Main] End')

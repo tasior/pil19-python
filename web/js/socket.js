@@ -36,11 +36,11 @@ function createWebSocket(deviceId, host, path) {
         });
     }
 
-    function receive(cmd, listener) {
+    function listen(cmd, listener) {
         socket.addEventListener('message', (ev) => {
             const data  = JSON.parse(ev.data);
             if (data.cmd == cmd) {
-                listener(data);
+                listener(cmd, data);
             }
         });
     }
@@ -56,7 +56,7 @@ function createWebSocket(deviceId, host, path) {
     return {
         connect,
         send,
-        receive,
+        listen,
         on,
         off
     }

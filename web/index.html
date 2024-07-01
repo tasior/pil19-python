@@ -681,6 +681,8 @@
     (async function () {
       await socket.connect();
       socket.on('close', () => console.log('WS CLOSED!!!'));
+      socket.on('message', (e) => console.log('WS MESSAGE', e.data));
+      socket.listen('auth:requested', (cmd, data) => console.log('auth:requested', cmd, data))
 
       const auth_response = await socket.send(cmd.auth_check);
       console.log(auth_response)

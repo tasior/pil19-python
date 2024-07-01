@@ -1,34 +1,37 @@
 from server import IServer
 from microdot_asyncio import Request
 from config import write_config
+from machine import RTC
 
 class AppServer(IServer):
 
-    def __init__(self, config: dict, wlan, port, index_path) -> None:
-        super().__init__(config, wlan, port, index_path)
+    def __init__(self, config: dict, pil19, wlan, port, index_path) -> None:
+        super().__init__(config, pil19, wlan, port, index_path)
         self.handlers = {
-            'auth:check': lambda _: 'Authorized',
+            'auth:check': self.cmd_auth_check,
             'auth:request': self.cmd_auth_request,
             'config:get': self.cmd_config_get,
         }
 
-    def cmd_auth_request(self, cmd):
-        self.debug(self.config)
+    async def cmd_auth_check(self, cmd):
+        return 'Authorized'
+
+    async def cmd_auth_request(self, cmd):
+        self.debug('[MainServer] auth:request')
         self.config['devices'].append({
             'id': cmd['deviceId'],
             'name': '',
             'status': 'auth_requested',
         })
-        self.debug(self.config)
         write_config(self.config)
+        await self.broadcast({ 'cmd': 'auth:requested', 'status': 'OK',  'data': None})
         return 'OK'
 
-    def cmd_config_get(self, cmd):
+    async def cmd_config_get(self, cmd):
         filtered_config = {}
         for key, value in self.config.items():
             if "password" in key: filtered_config[key] = "***"
             else: filtered_config[key] = value
-        print(filtered_config)
         return filtered_config
 
     def get_device_from_request(self, request: Request):
@@ -43,7 +46,7 @@ class AppServer(IServer):
     def is_device_authenticated(self, device):
         return False if device is None else False if device['status'] != 'authorized' else True
 
-    def handle_cmd(self, request: Request, cmd):
+    async def handle_cmd(self, request: Request, cmd):
         device = self.get_device_from_request(request=request)
         auth = self.is_device_authenticated(device=device)
 
@@ -51,7 +54,7 @@ class AppServer(IServer):
             try:
                 if cmd['cmd'] not in self.handlers:
                     return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': 404, 'error_message': 'Unknown command' }
-                return { 'cmd': cmd['cmd'], 'status': 'OK', 'data': self.handlers[cmd['cmd']](cmd) }
+                return { 'cmd': cmd['cmd'], 'status': 'OK', 'data': await self.handlers[cmd['cmd']](cmd) }
             except OSError as e:
                 return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': e.errno, 'error_message': e.strerror }
             except Exception as e:
