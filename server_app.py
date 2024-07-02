@@ -28,7 +28,10 @@ class AppServer(IServer):
 
     async def cmd_system_set_time(self, cmd):
         timestamp = cmd['data']
-        self.rtc.datetime(time.gmtime(timestamp))
+        # (year, month, mday, hour, minute, second, weekday, yearday)
+        local = time.localtime(timestamp)
+        # (year, month, day, weekday, hours, minutes, seconds, subseconds)
+        self.rtc.datetime(local[0:3] + tuple([local[6]]) + local[3:6] + tuple([0]))
         return 'OK'
 
     async def cmd_auth_check(self, cmd):
