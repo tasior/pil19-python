@@ -97,7 +97,7 @@
                     </div>
                     <div id="pilot-display" class="fw-bold text-secondary-emphasis">
                       <div class="row px-2">
-                        <div class="col text-start">20:41</div>
+                        <div class="col text-start" id="display_time">20:41</div>
                         <div class="col text-end">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stopwatch" viewBox="0 0 16 16">
                             <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5V5.6z" />
@@ -115,8 +115,8 @@
                             </path>
                           </svg> <span class="channel-name">Wszystkie</span>
                         </div>
-                        <div class="col text-start">Śr</div>
-                        <div class="col text-end">05/07/2023</div>
+                        <div class="col text-start" id="display_weekday">Śr</div>
+                        <div class="col text-end" id="display_year">05/07/2023</div>
                       </div>
                     </div>
                   </div>
@@ -622,6 +622,8 @@
     const socket = createWebSocket(deviceId, window.location.host, `ws?deviceId=${deviceId}`);
     // const socket = createWebSocket(deviceId, `192.168.68.115`, `ws?deviceId=${deviceId}`);
 
+    var time = { board_time: '', device_time: '' };
+
     const menu = new bootstrap.Offcanvas('#menu');
 
     const pagesElement = document.querySelector('#pages');
@@ -683,6 +685,15 @@
       await socket.send(cmd.auth_request)
     }
 
+    var weekDays = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So'];
+    function update_dates() {
+      document.querySelector('#board_time').innerHTML = time.board_time.toLocaleString();
+      document.querySelector('#device_time').innerHTML = time.device_time.toLocaleString();
+      document.querySelector('#display_time').innerHTML = `${('0' + time.board_time.getHours()).slice(-2)}:${('0' + time.board_time.getMinutes()).slice(-2)}`;
+      document.querySelector('#display_weekday').innerHTML = weekDays[time.board_time.getDay()];
+      document.querySelector('#display_year').innerHTML = `${('0' + time.board_time.getDate()).slice(-2)}/${('0' + time.board_time.getMonth()+1).slice(-2)}/${time.board_time.getFullYear()}`;
+    }
+
     (async function () {
       await socket.connect();
       socket.on('close', () => console.log('WS CLOSED!!!'));
@@ -690,8 +701,9 @@
       socket.listen(cmd.auth_requested, (cmd, data) => console.log('auth:requested', cmd, data))
       socket.listen(cmd.system_time, (cmd, data) => {
         console.log(cmd, data);
-        document.querySelector('#board_time').innerHTML = (new Date(data.data * 1000)).toLocaleString();
-        document.querySelector('#device_time').innerHTML = (new Date()).toLocaleString();
+        time.board_time = new Date(data.data * 1000);
+        time.device_time = new Date();
+        update_dates();
       });
 
       const auth_response = await socket.send(cmd.auth_check);
