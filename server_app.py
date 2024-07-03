@@ -71,16 +71,21 @@ class AppServer(IServer):
         device = self.get_device_from_request(request=request)
         auth = self.is_device_authenticated(device=device)
 
+        if device is None:
+            device = { 'id': cmd['deviceId'], 'name': '', 'status': 'unauthorized' }
+
         if auth or cmd['cmd'] == 'auth:request':
             try:
                 if cmd['cmd'] not in self.handlers:
-                    return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': 404, 'error_message': 'Unknown command' }
-                return { 'cmd': cmd['cmd'], 'status': 'OK', 'data': await self.handlers[cmd['cmd']](cmd) }
+                    return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': 404, 'error_message': 'Unknown command', 'device': device }
+                data = await self.handlers[cmd['cmd']](cmd)
+                device = self.get_device_from_request(request=request)
+                return { 'cmd': cmd['cmd'], 'status': 'OK', 'data': data, 'device': device }
             except OSError as e:
-                return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': e.errno, 'error_message': e.strerror }
+                return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': e.errno, 'error_message': e.strerror, 'device': device }
             except Exception as e:
                 import sys
                 sys.print_exception(e) # type: ignore
-                return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': 0, 'error_message': str(e) }
+                return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': 0, 'error_message': str(e), 'device': device }
         else:
             return { 'cmd': cmd['cmd'], 'status': 'ERROR', 'error_code': 401, 'error_message': 'Unauthorized device', 'device': device }

@@ -82,7 +82,7 @@
   <div id="main-container" class="container-xxl text-center h-100 position-relative d-none">
     <div id="pages" class="carousel slide h-100" data-bs-animation="50">
       <div class="carousel-inner h-100">
-        <div class="carousel-item h-100 active" data-page="pilot">
+        <div class="carousel-item h-100" data-page="pilot">
           <div class="row text-center justify-content-center overflow-auto h-100">
             <div class="col col-9 col-md-4 col-xl-3 p-5">
               <div class="card border border-top-0 m-auto" data-bs-theme="light">
@@ -171,7 +171,7 @@
             </div>
           </div>
         </div>
-        <div class="carousel-item h-100" data-page="rolety">
+        <div class="carousel-item h-100 active" data-page="rolety">
           <div class=" overflow-auto h-100">
             <div class="row p-0 m-0">
               <div class="col col-12 fs-2 py-2 text-start border-bottom">
@@ -357,7 +357,7 @@
                   <div class="col col-2 py-2 m-0">
                     <div class="p-2">
                       <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked" checked>
+                        <input class="form-check-input" type="checkbox" role="switch" checked>
                       </div>
                     </div>
                   </div>
@@ -401,7 +401,7 @@
                   <div class="col col-2 py-2 m-0">
                     <div class="p-2">
                       <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked">
+                        <input class="form-check-input" type="checkbox" role="switch">
                       </div>
                     </div>
                   </div>
@@ -446,7 +446,7 @@
               <div class="col col-12 py-0 text-start">
                 <div class="row gy-2 p-0 m-0">
                   <div class="col col-12" style="--bs-bg-opacity: .5;">
-                    <button class="btn p-2" data-bs-toggle="modal" data-bs-target="#add-group">
+                    <button class="btn p-2" data-bs-toggle="modal" data-bs-target="#add-schedule">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-square em-1" viewBox="0 0 16 16">
                         <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z" />
                         <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
@@ -456,7 +456,7 @@
                 </div>
               </div>
               <!-- MODAL -->
-              <div class="modal" tabindex="-1" id="add-group">
+              <div class="modal" tabindex="-1" id="add-schedule">
                 <div class="modal-dialog modal-dialog-centered">
                   <div class="modal-content">
                     <div class="modal-header">
@@ -465,7 +465,7 @@
                     </div>
                     <div class="modal-body">
                       <div class="form-floating pb-2">
-                        <select class="form-select rounded-0" id="add-group-channels" aria-label="Wybierz rolety" size="5" multiple style="height: auto;">
+                        <select class="form-select rounded-0" id="add-schedule-channels" aria-label="Wybierz rolety" size="5" multiple style="height: auto;">
                           <option value="0">00</option>
                           <option value="1">01</option>
                           <option value="2">02</option>
@@ -473,12 +473,12 @@
                           <option value="4">04</option>
                           <option value="5">05</option>
                         </select>
-                        <label for="add-group-channels">Wybierz rolety</label>
+                        <label for="add-schedule-channels">Wybierz rolety</label>
                       </div>
 
                       <div class="form-floating">
-                        <input type="text" class="form-control rounded-0" id="add-group-name">
-                        <label for="add-group-name">Nazwa</label>
+                        <input type="text" class="form-control rounded-0" id="add-schedule-name">
+                        <label for="add-schedule-name">Nazwa</label>
                       </div>
                     </div>
                     <div class="modal-footer">

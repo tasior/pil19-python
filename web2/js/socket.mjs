@@ -1,0 +1,80 @@
+
+function once(object, type, callback) {
+    const _once = (e) => {
+        if(callback(e)) {
+            object.removeEventListener(type, _once);
+        }
+    };
+    object.addEventListener(type, _once);
+}
+
+function createWebSocket(deviceId, url) {
+    var socket;
+
+    function connect() {
+        return new Promise((resolve, reject) => {
+            try {
+                document.cookie = 'X-Authorization=' + deviceId + '; path=/';
+                socket = new WebSocket(url);
+                once(socket, 'open', () => resolve(true));
+                once(socket, 'error', () => reject(false));
+            } catch (e) {
+                reject(e);
+            }
+        });
+    }
+
+    function close() {
+        socket.close();
+    }
+
+    function send(command, data) {
+        return new Promise((resolve, reject) => {
+            once(socket, 'message', (ev) => {
+                const response = JSON.parse(ev.data);
+                if (response.cmd == command) {
+                    resolve(response);
+                    return true;
+                }
+                return false;
+            });
+            once(socket, 'error', (ev) => reject(ev));
+
+            socket.send(JSON.stringify({
+                cmd: command,
+                data: data,
+                deviceId: deviceId
+            }));
+        });
+    }
+
+    function listen(cmd, listener) {
+        socket.addEventListener('message', (ev) => {
+            const data  = JSON.parse(ev.data);
+            if (data.cmd == cmd) {
+                listener(cmd, data);
+            }
+        });
+    }
+
+    function on(event, listener) {
+        socket.addEventListener(event, listener);
+    }
+
+    function off(event, listener) {
+        socket.removeEventListener(event, listener);
+    }
+
+    return {
+        connect,
+        close,
+        send,
+        listen,
+        on,
+        off
+    }
+}
+
+export {
+    createWebSocket
+};
