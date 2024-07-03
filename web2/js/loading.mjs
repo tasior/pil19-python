@@ -2,7 +2,7 @@ import { html } from 'htm/preact';
     
 export function Loading({ status }) {
     return html`
-        <div class="container-xxl text-center h-100" id="loading-container">
+        <div class="container-xxl text-center h-100">
             <div class="row mb-3">
             <div class="col text-start border-bottom p-5">
                 <div class="d-flex align-items-center">

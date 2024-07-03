@@ -2,12 +2,12 @@
     "compilerOptions": {
         "baseUrl": "./",
         "paths": {
-            "preact": ["./js/preact@10.22.1/preact.mjs"],
-            "preact/hooks": ["./js/preact@10.22.1/hooks.mjs"],
-            "@preact/signals-core": ["./js/preact@10.22.1/signals-core.mjs"],
-            "@preact/signals": ["./js/preact@10.22.1/signals.mjs"],
-            "htm": ["./js/htm@3.1.1/htm.mjs"],
-            "htm/preact": ["./js/htm@3.1.1/preact.mjs"],
+            "preact": ["./js/lib/preact@10.22.1/preact.mjs"],
+            "preact/hooks": ["./js/lib/preact@10.22.1/hooks.mjs"],
+            "@preact/signals-core": ["./js/lib/preact@10.22.1/signals-core.mjs"],
+            "@preact/signals": ["./js/lib/preact@10.22.1/signals.mjs"],
+            "htm": ["./js/lib/htm@3.1.1/htm.mjs"],
+            "htm/preact": ["./js/lib/htm@3.1.1/preact.mjs"],
         }
     }
 }

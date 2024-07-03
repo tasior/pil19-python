@@ -4,6 +4,7 @@ import { html } from 'htm/preact';
 import { createWebSocket } from './socket.mjs';
 import { Loading } from './loading.mjs';
 import { Auth } from './auth.mjs';
+import { Main } from './app/main.mjs';
 
 const AppContext = createContext({});
 
@@ -49,13 +50,13 @@ function App(props) {
 
     return html`
         <${AppContext.Provider} value=${context}>
-        ${socketState != 'Connected' ? 
-            html`<${Loading} status=${socketState} />` : 
-            authStatus != "authorized" ? 
-                html`<${Auth} status=${authStatus} deviceId=${deviceId} requestAuthorization=${requestAuthorization} />` :
-                html`Welcome`
-        }
-        </${AppContext.Provider}>
+            ${socketState != 'Connected' ? 
+                html`<${Loading} status=${socketState} />` : 
+                authStatus && authStatus != "authorized" ? 
+                    html`<${Auth} status=${authStatus} deviceId=${deviceId} requestAuthorization=${requestAuthorization} />` :
+                    html`<${Main} />`
+            }
+        <//>
     `;
 }
 
