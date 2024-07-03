@@ -2,7 +2,6 @@ import { html } from 'htm/preact';
 import { RemoteSubMenu } from './remote.mjs';
     
 export function SubMenu({ menuId, currentCarouselIndex }) {
-    console.log('sub current', currentCarouselIndex)
     const subMenus = [RemoteSubMenu];
 
     return html`

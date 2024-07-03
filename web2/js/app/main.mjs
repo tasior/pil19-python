@@ -5,7 +5,7 @@ import { SubMenu } from './submenu/submenu.mjs';
 import { useEffect, useRef, useId, useState } from 'preact/hooks';
 import { Menu } from './menu.mjs';
     
-export function Main({  }) {
+export function Main({ socket }) {
     const carouselId = useId();
     const menuId = useId();
     const carouselRef = useRef();
@@ -23,8 +23,8 @@ export function Main({  }) {
         <div class="container-xxl text-center h-100 position-relative">
             <div class="carousel slide h-100" data-bs-animation="50" id=${carouselId} ref=${carouselRef}>
                 <div class="carousel-inner h-100">
-                    <${Remote} />
-                    <${Blinds} active="true" />
+                    <${Remote} socket=${socket} />
+                    <${Blinds} socket=${socket} active="true" />
                 </div>
             </div>
             <${SubMenu} menuId=${menuId} currentCarouselIndex=${currentCarouselIndex} />

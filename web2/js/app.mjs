@@ -54,7 +54,7 @@ function App(props) {
                 html`<${Loading} status=${socketState} />` : 
                 authStatus && authStatus != "authorized" ? 
                     html`<${Auth} status=${authStatus} deviceId=${deviceId} requestAuthorization=${requestAuthorization} />` :
-                    html`<${Main} />`
+                    html`<${Main} socket=${socket} />`
             }
         <//>
     `;

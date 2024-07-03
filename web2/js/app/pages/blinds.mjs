@@ -1,6 +1,19 @@
 import { html } from 'htm/preact';
+import { useRef, useId, useState } from 'preact/hooks';
     
-export function Blinds({ active }) {
+export function Blinds({ active, socket }) {
+    const modalId = useId();
+    const modalRef = useRef();
+
+    const [addState, setAddState] = useState({ channel: '', name: '' });
+
+    const submitAdd = e => {
+      console.log('submitAdd', addState);
+
+      setAddState({ channel: '', name: '' });
+      e.preventDefault();
+    };
+
     return html`
         <div class="carousel-item h-100 ${active ? 'active': ''}" data-page="blinds">
           <div class=" overflow-auto h-100">
@@ -42,7 +55,7 @@ export function Blinds({ active }) {
               <div class="col col-12 py-0 text-start">
                 <div class="row gy-2 p-0 m-0">
                   <div class="col col-12" style="--bs-bg-opacity: .5;">
-                    <button class="btn p-2" data-bs-toggle="modal" data-bs-target="#add-channel">
+                    <button class="btn p-2" data-bs-toggle="modal" data-bs-target="#${modalId}">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-square em-1" viewBox="0 0 16 16">
                         <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z" />
                         <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
@@ -52,36 +65,36 @@ export function Blinds({ active }) {
                 </div>
               </div>
               <!-- MODAL -->
-              <div class="modal" tabindex="-1" id="add-channel">
-                <div class="modal-dialog modal-dialog-centered">
-                  <div class="modal-content">
-                    <div class="modal-header">
-                      <h5 class="modal-title">Dodaj rolete</h5>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                      <div class="form-floating pb-2">
-                        <select class="form-select rounded-0" id="add-channel-no" aria-label="Wybierz kanał">
-                          <option value="0" disabled>00</option>
-                          <option value="1">01</option>
-                          <option value="2">02</option>
-                          <option value="3">03</option>
-                          <option value="4">04</option>
-                          <option value="5">05</option>
-                        </select>
-                        <label for="add-channel-no">Wybierz kanał</label>
+              <div class="modal" tabindex="-1" id=${modalId} >
+                <form onSubmit=${submitAdd}>
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Dodaj rolete</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                       </div>
+                      <div class="modal-body">
+                        <div class="form-floating"><span class="text-left text-danger error-message">Error</span></div>
+                        <div class="form-floating pb-2">
+                          <select class="form-select rounded-0" aria-label="Wybierz kanał" value=${addState.channel} onChange=${ e => setAddState({ ...addState, channel: e.currentTarget.value }) }>
+                            ${[...Array(100).keys()].map( i => html`
+                              <option value="${i}">${('0' + i).slice(-2)}</option>
+                            `)}
+                          </select>
+                          <label for="add-channel-no">Wybierz kanał</label>
+                        </div>
 
-                      <div class="form-floating">
-                        <input type="text" class="form-control rounded-0" id="add-channel-name" />
-                        <label for="add-channel-name">Nazwa</label>
+                        <div class="form-floating">
+                          <input type="text" class="form-control rounded-0" value=${addState.name} onInput=${ e => setAddState({ ...addState, name: e.currentTarget.value }) } />
+                          <label for="add-channel-name">Nazwa</label>
+                        </div>
                       </div>
-                    </div>
-                    <div class="modal-footer">
-                      <button type="button" class="btn btn-warning">Dodaj</button>
+                      <div class="modal-footer">
+                        <button type="submit" class="btn btn-warning" data-bs-dismiss="modal" >Dodaj</button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </form>
               </div>
             </div>
           </div>
