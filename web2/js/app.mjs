@@ -19,7 +19,7 @@ function App(props) {
 
     const initializeWebSocket = async () => {
         try {
-            setSocketState('Initialized');
+            setSocketState('Connecting');
             await socket.connect();
             setSocketState('Connected');
             return true;
