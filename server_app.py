@@ -1,6 +1,6 @@
 from server import IServer
 from microdot_asyncio import Request
-from config import write_config
+from config import write_config, read_config
 from machine import RTC
 import uasyncio as asyncio
 import time
@@ -14,6 +14,10 @@ class AppServer(IServer):
             'auth:request': self.cmd_auth_request,
             'config:get': self.cmd_config_get,
             'system:set_time': self.cmd_system_set_time,
+            'blinds:list': self.cmd_blinds_list,
+            'blinds:add': self.cmd_blinds_add,
+            'blinds:edit': self.cmd_blinds_edit,
+            'blinds:remove': self.cmd_blinds_remove,
         }
         self.rtc = RTC()
 
@@ -25,6 +29,60 @@ class AppServer(IServer):
         while True:
             await self.broadcast({ 'cmd': 'system:time', 'status': 'OK', 'data': time.time() })
             await asyncio.sleep(1)
+
+    def read_cron_config(self):
+        return read_config(file=b'/.confg_cron')
+
+    def write_cron_config(self, config):
+        write_config(config=config, file=b'/.confg_cron')
+
+    async def cmd_blinds_list(self, cmd):
+        cron_config = self.read_cron_config()
+        return cron_config.get('blinds', [])
+    
+    async def cmd_blinds_add(self, cmd):
+        cron_config = self.read_cron_config()
+        blinds = cron_config.get('blinds', [])
+
+        if cmd['data'] not in blinds:
+            blinds.append(cmd['data'])
+            cron_config['blinds'] = blinds
+            self.write_cron_config(cron_config)
+        else:
+            raise ValueError('Blind already exists')
+
+        return 'OK'
+    
+    async def cmd_blinds_edit(self, cmd):
+        cron_config = self.read_cron_config()
+        blinds = cron_config.get('blinds', [])
+
+        try:
+            i = next(i for i, blind in enumerate(blinds) if blind.get('channel') == cmd['data']['channel'])
+            blinds[i] = cmd['data']
+            cron_config['blinds'] = blinds
+            self.write_cron_config(cron_config)
+        except StopIteration:
+            raise ValueError('Blind not exists')
+        except Exception as e:
+            raise e
+
+        return 'OK'
+
+    async def cmd_blinds_remove(self, cmd):
+        cron_config = self.read_cron_config()
+        blinds = cron_config.get('blinds', [])
+
+        try:
+            blinds.remove(cmd['data'])
+            cron_config['blinds'] = blinds
+            self.write_cron_config(cron_config)
+        except ValueError:
+            raise ValueError('Blind not exists')
+        except Exception as e:
+            raise e
+
+        return 'OK'
 
     async def cmd_system_set_time(self, cmd):
         timestamp = cmd['data']
