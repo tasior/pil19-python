@@ -1,12 +1,19 @@
 import { html } from 'htm/preact';
 import { useEffect, useState } from 'preact/hooks';
     
+let actionIconTimeout = null;
+
 export function Remote({ active, blinds }) {
-  console.log(blinds);
   const [blind, setBlind] = useState();
+  const [actionIcon, setActionIcon] = useState(null);
 
   const remoteControll = (channel, action) => {
+    clearTimeout(actionIconTimeout);
+
     console.log(channel, action)
+    setActionIcon(action);
+
+    actionIconTimeout = setTimeout(() => setActionIcon(null) , 5000);
   };
 
   useEffect(() => {
@@ -43,7 +50,25 @@ export function Remote({ active, blinds }) {
                     <div class="row px-2">
                       <div class="col text-start">01:18</div>
                       <div class="col text-end">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stopwatch" viewBox="0 0 16 16">
+                        ${actionIcon && actionIcon == 'up' ? html`
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-up blink" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M7.646 2.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 3.707 2.354 9.354a.5.5 0 1 1-.708-.708z"/>
+                            <path fill-rule="evenodd" d="M7.646 6.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 7.707l-5.646 5.647a.5.5 0 0 1-.708-.708z"/>
+                          </svg>
+                        ` : ``}
+                        ${actionIcon && actionIcon == 'down' ? html`
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-down blink" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M1.646 6.646a.5.5 0 0 1 .708 0L8 12.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708"/>
+                            <path fill-rule="evenodd" d="M1.646 2.646a.5.5 0 0 1 .708 0L8 8.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708"/>
+                          </svg>
+                        ` : ``}
+                        ${actionIcon && actionIcon == 'stop' ? html`
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stop-fill blink" viewBox="0 0 16 16">
+                            <path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5"/>
+                          </svg>
+                        ` : ``}
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stopwatch ms-1" viewBox="0 0 16 16">
                           <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5V5.6z"></path>
                           <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64a.715.715 0 0 1 .012-.013l.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354a.512.512 0 0 1-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5zM8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3z"></path>
                         </svg>

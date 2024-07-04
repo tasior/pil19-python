@@ -9,7 +9,6 @@ export function Main({ socket }) {
     const carouselId = useId();
     const menuId = useId();
     const carouselRef = useRef();
-    const [carousel, setCarousel] = useState();
     const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
 
     const [blinds, setBlinds] = useState([]);
@@ -23,8 +22,6 @@ export function Main({ socket }) {
     };
 
     useEffect(() => {
-        setCarousel(new bootstrap.Carousel(carouselRef.current));
-        window.carousel = carousel;
         carouselRef.current.addEventListener('slide.bs.carousel', event => {
             setCurrentCarouselIndex(event.to);
         });
