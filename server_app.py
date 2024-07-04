@@ -58,7 +58,7 @@ class AppServer(IServer):
         blinds = cron_config.get('blinds', [])
 
         try:
-            i = next(i for i, blind in enumerate(blinds) if blind.get('channel') == cmd['data']['channel'])
+            i = next(i for i, blind in enumerate(blinds) if blind.get('id') == cmd['data']['id'])
             blinds[i] = cmd['data']
             cron_config['blinds'] = blinds
             self.write_cron_config(cron_config)

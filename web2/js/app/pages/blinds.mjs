@@ -8,7 +8,7 @@ export function Blinds({ active, socket, blinds, refreshBlinds, definedBlinds })
 
     const [modal, setModal] = useState();
 
-    const [blind, setBlind] = useState({ channel: '', name: '' });
+    const [blind, setBlind] = useState({ id: '', channel: '', name: '' });
     const [action, setAction] = useState(null);
     const [error, setError] = useState(null);
 
@@ -25,7 +25,6 @@ export function Blinds({ active, socket, blinds, refreshBlinds, definedBlinds })
           throw 'Podaj kanał i nazwę';
         }
         const response = await socket.send(`blinds:${action}`, blind);
-        console.log(response);
         if (response.status == 'ERROR') {
           setError(response.error_message);
         } else {
@@ -110,7 +109,7 @@ export function Blinds({ active, socket, blinds, refreshBlinds, definedBlinds })
                         <div class="form-floating pb-2">
                           <select class="form-select rounded-0" aria-label="Wybierz kanał" 
                             value=${blind.channel} 
-                            onChange=${ e => setBlind({ ...blind, channel: e.currentTarget.value }) }
+                            onChange=${ e => setBlind({ ...blind, id: e.currentTarget.value, channel: e.currentTarget.value }) }
                             disabled=${['edit', 'remove'].indexOf(action) > -1}
                           >
                             ${[...Array(100).keys()].map( i => html`

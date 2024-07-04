@@ -13,6 +13,7 @@ export function Main({ socket, addSystemTimeListener }) {
 
     const [blinds, setBlinds] = useState([]);
     const definedBlinds = useMemo(() => blinds.map(b => +b.channel), [blinds]);
+    const [groups, setGroups] = useState([]);
 
     const refreshBlinds = async () => {
         const response = await socket.send('blinds:list');
@@ -33,7 +34,7 @@ export function Main({ socket, addSystemTimeListener }) {
         <div class="container-xxl text-center h-100 position-relative">
             <div class="carousel slide h-100" data-bs-animation="50" id=${carouselId} ref=${carouselRef}>
                 <div class="carousel-inner h-100">
-                    <${Remote} socket=${socket} blinds=${blinds} active="true" addSystemTimeListener=${addSystemTimeListener} />
+                    <${Remote} socket=${socket} blinds=${blinds} groups=${groups} active="true" addSystemTimeListener=${addSystemTimeListener} />
                     <${Blinds} socket=${socket} blinds=${blinds} definedBlinds=${definedBlinds} setBlinds=${setBlinds} refreshBlinds=${refreshBlinds} />
                 </div>
             </div>
