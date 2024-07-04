@@ -1,13 +1,13 @@
 import { html } from 'htm/preact';
-import { useRef, useId, useState, useEffect } from 'preact/hooks';
+import { useRef, useId, useState, useEffect, useMemo } from 'preact/hooks';
 
-export function Blinds({ active, socket, blinds, refreshBlinds, definedBlinds }) {
+export function Blinds({ active, socket, blinds, refreshBlinds }) {
     const modalId = useId();
     const modalRef = useRef();
     window.modalRef = modalRef;
 
     const [modal, setModal] = useState();
-
+    const definedBlinds = useMemo(() => blinds.map(b => +b.channel), [blinds]);
     const [blind, setBlind] = useState({ id: '', channel: '', name: '' });
     const [action, setAction] = useState(null);
     const [error, setError] = useState(null);

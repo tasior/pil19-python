@@ -2,7 +2,7 @@ import { html } from 'htm/preact';
 import { Remote } from './pages/remote.mjs';
 import { Blinds } from './pages/blinds.mjs';
 import { SubMenu } from './submenu/submenu.mjs';
-import { useEffect, useRef, useId, useState, useMemo } from 'preact/hooks';
+import { useEffect, useRef, useId, useState } from 'preact/hooks';
 import { Menu } from './menu.mjs';
     
 export function Main({ socket, addSystemTimeListener }) {
@@ -12,7 +12,6 @@ export function Main({ socket, addSystemTimeListener }) {
     const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
 
     const [blinds, setBlinds] = useState([]);
-    const definedBlinds = useMemo(() => blinds.map(b => +b.channel), [blinds]);
     const [groups, setGroups] = useState([]);
 
     const refreshBlinds = async () => {
@@ -35,7 +34,7 @@ export function Main({ socket, addSystemTimeListener }) {
             <div class="carousel slide h-100" data-bs-animation="50" id=${carouselId} ref=${carouselRef}>
                 <div class="carousel-inner h-100">
                     <${Remote} socket=${socket} blinds=${blinds} groups=${groups} active="true" addSystemTimeListener=${addSystemTimeListener} />
-                    <${Blinds} socket=${socket} blinds=${blinds} definedBlinds=${definedBlinds} setBlinds=${setBlinds} refreshBlinds=${refreshBlinds} />
+                    <${Blinds} socket=${socket} blinds=${blinds} setBlinds=${setBlinds} refreshBlinds=${refreshBlinds} />
                 </div>
             </div>
             <${SubMenu} menuId=${menuId} currentCarouselIndex=${currentCarouselIndex} />
