@@ -27,7 +27,7 @@ export function Groups({ active, socket, blinds, groups, refreshGroups }) {
           if (response.status == 'ERROR') {
             setError(response.error_message);
           } else {
-            refreshBlinds();
+            refreshGroups();
             modal.hide();
           }
         } catch(e) {
@@ -137,7 +137,7 @@ export function Groups({ active, socket, blinds, groups, refreshGroups }) {
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="submit" class="btn btn-warning">Dodaj</button>
+                            <button type="submit" class="btn btn-warning">${action == 'add' ? 'Dodaj' : (action == 'edit' ? 'Edytuj' : 'Usuń')}</button>
                         </div>
                     </div>
                   </div>

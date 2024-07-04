@@ -18,6 +18,10 @@ class AppServer(IServer):
             'blinds:add': self.cmd_blinds_add,
             'blinds:edit': self.cmd_blinds_edit,
             'blinds:remove': self.cmd_blinds_remove,
+            'groups:list': self.cmd_groups_list,
+            'groups:add': self.cmd_groups_add,
+            'groups:edit': self.cmd_groups_edit,
+            'groups:remove': self.cmd_groups_remove,
         }
         self.rtc = RTC()
 
@@ -36,53 +40,77 @@ class AppServer(IServer):
     def write_cron_config(self, config):
         write_config(config=config, file=b'/.confg_cron')
 
-    async def cmd_blinds_list(self, cmd):
+    def target_list(self, target):
         cron_config = self.read_cron_config()
-        return cron_config.get('blinds', [])
-    
-    async def cmd_blinds_add(self, cmd):
-        cron_config = self.read_cron_config()
-        blinds = cron_config.get('blinds', [])
+        return cron_config.get(target, [])
 
-        if cmd['data'] not in blinds:
-            blinds.append(cmd['data'])
-            cron_config['blinds'] = blinds
+    async def cmd_blinds_list(self, _):
+        return self.target_list('blinds')
+    
+    async def cmd_groups_list(self, _):
+        return self.target_list('groups')
+    
+    def target_add(self, target, data):
+        cron_config = self.read_cron_config()
+        target_data = cron_config.get(target, [])
+
+        if data not in target_data:
+            target_data.append(data)
+            cron_config[target] = target_data
             self.write_cron_config(cron_config)
         else:
-            raise ValueError('Blind already exists')
+            raise ValueError('{} already exists'.format(target[0].upper() + target[1:-1]))
 
         return 'OK'
+
+    async def cmd_blinds_add(self, cmd):
+        return self.target_add('blinds', cmd['data'])
     
-    async def cmd_blinds_edit(self, cmd):
+    async def cmd_groups_add(self, cmd):
+        return self.target_add('groups', cmd['data'])
+
+    def target_edit(self, target, data):
         cron_config = self.read_cron_config()
-        blinds = cron_config.get('blinds', [])
+        target_data = cron_config.get(target, [])
 
         try:
-            i = next(i for i, blind in enumerate(blinds) if blind.get('id') == cmd['data']['id'])
-            blinds[i] = cmd['data']
-            cron_config['blinds'] = blinds
+            i = next(i for i, _target in enumerate(target_data) if _target.get('id') == data['id'])
+            target_data[i] = data
+            cron_config[target] = target_data
             self.write_cron_config(cron_config)
         except StopIteration:
-            raise ValueError('Blind not exists')
+            raise ValueError('{} not exists'.format(target[0].upper() + target[1:-1]))
+        except Exception as e:
+            raise e
+
+        return 'OK'
+
+    async def cmd_blinds_edit(self, cmd):
+        return self.target_edit('blinds', cmd['data'])
+    
+    async def cmd_groups_edit(self, cmd):
+        return self.target_edit('groups', cmd['data'])
+
+    def target_remove(self, target, data):
+        cron_config = self.read_cron_config()
+        target_data = cron_config.get(target, [])
+
+        try:
+            target_data.remove(data)
+            cron_config[target] = target_data
+            self.write_cron_config(cron_config)
+        except ValueError:
+            raise ValueError('{} not exists'.format(target[0].upper() + target[1:-1]))
         except Exception as e:
             raise e
 
         return 'OK'
 
     async def cmd_blinds_remove(self, cmd):
-        cron_config = self.read_cron_config()
-        blinds = cron_config.get('blinds', [])
-
-        try:
-            blinds.remove(cmd['data'])
-            cron_config['blinds'] = blinds
-            self.write_cron_config(cron_config)
-        except ValueError:
-            raise ValueError('Blind not exists')
-        except Exception as e:
-            raise e
-
-        return 'OK'
+        return self.target_remove('blinds', cmd['data'])
+    
+    async def cmd_groups_remove(self, cmd):
+        return self.target_remove('groups', cmd['data'])
 
     async def cmd_system_set_time(self, cmd):
         timestamp = cmd['data']
