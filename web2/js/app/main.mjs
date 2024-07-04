@@ -5,29 +5,31 @@ import { SubMenu } from './submenu/submenu.mjs';
 import { useEffect, useRef, useId, useState } from 'preact/hooks';
 import { Menu } from './menu.mjs';
 import { Groups } from './pages/groups.mjs';
+import { Schedules } from './pages/schedules.mjs';
     
 export function Main({ socket, addSystemTimeListener }) {
     const carouselId = useId();
     const menuId = useId();
     const carouselRef = useRef();
-    const [currentCarouselIndex, setCurrentCarouselIndex] = useState(2);
+    const [currentCarouselIndex, setCurrentCarouselIndex] = useState(3);
 
     const [blinds, setBlinds] = useState([]);
     const [groups, setGroups] = useState([]);
+    const [schedules, setSchedules] = useState([]);
 
-    const refreshBlinds = async () => {
-        const response = await socket.send('blinds:list');
-        if (response.status == 'OK') {
-            setBlinds(response.data);
-        }
+    const refreshTarget = (target, set) => {
+        return async () => {
+            const response = await socket.send(`${target}:list`);
+            if (response.status == 'OK') {
+                set(response.data);
+            } else {
+                console.log('refreshTarget error', response);
+            }
+        };
     };
-
-    const refreshGroups = async () => {
-        const response = await socket.send('groups:list');
-        if (response.status == 'OK') {
-            setGroups(response.data);
-        }
-    };
+    const refreshBlinds = refreshTarget('blinds', setBlinds);
+    const refreshGroups = refreshTarget('groups', setGroups);
+    const refreshSchedules = refreshTarget('schedules', setSchedules);
 
     useEffect(() => {
         carouselRef.current.addEventListener('slide.bs.carousel', event => {
@@ -36,6 +38,7 @@ export function Main({ socket, addSystemTimeListener }) {
 
         refreshBlinds();
         refreshGroups();
+        refreshSchedules();
     }, []);
 
     return html`
@@ -44,7 +47,8 @@ export function Main({ socket, addSystemTimeListener }) {
                 <div class="carousel-inner h-100">
                     <${Remote} socket=${socket} blinds=${blinds} groups=${groups} addSystemTimeListener=${addSystemTimeListener} />
                     <${Blinds} socket=${socket} blinds=${blinds} setBlinds=${setBlinds} refreshBlinds=${refreshBlinds} />
-                    <${Groups} socket=${socket} blinds=${blinds} groups=${groups} active="true" refreshGroups=${refreshGroups} />
+                    <${Groups} socket=${socket} blinds=${blinds} groups=${groups} refreshGroups=${refreshGroups} />
+                    <${Schedules} active="true" socket=${socket} schedules=${schedules} blinds=${blinds} groups=${groups} refreshSchedules=${refreshSchedules}  />
                 </div>
             </div>
             <${SubMenu} menuId=${menuId} currentCarouselIndex=${currentCarouselIndex} />
