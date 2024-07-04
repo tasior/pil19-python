@@ -10,7 +10,7 @@ export function Remote({ active, blinds, groups, addSystemTimeListener }) {
 
   const [target, setTarget] = useState('blinds');
   const [currentTarget, setCurrentTarget] = useState();
-  const targetList = useMemo(() => target == 'blinds' ? blinds : groups, [blinds, groups]);
+  const targetList = useMemo(() => target == 'blinds' ? blinds : groups, [target, blinds, groups]);
 
   const runRemoteControll = (id, action) => {
     clearTimeout(actionIconTimeout);
@@ -60,7 +60,7 @@ export function Remote({ active, blinds, groups, addSystemTimeListener }) {
                   </div>
                   <div class="fw-bold text-secondary-emphasis">
                     <div class="row px-2">
-                      <div class="col text-start">${boardTime && `${('0' + boardTime.getHours()).slice(-2)}:${('0' + boardTime.getMinutes()).slice(-2)}`}</div>
+                      <div class="col text-start">${boardTime ? `${('0' + boardTime.getHours()).slice(-2)}:${('0' + boardTime.getMinutes()).slice(-2)}` : `--:--`} </div>
                       <div class="col text-end">
                         ${actionIcon && actionIcon == 'up' ? html`
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-up blink" viewBox="0 0 16 16">
@@ -91,13 +91,20 @@ export function Remote({ active, blinds, groups, addSystemTimeListener }) {
                     </div>
                     <div class="row px-2">
                       <div class="col col-12 pb-3 fw-light">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-archive-fill" viewBox="0 0 16 16">
-                          <path d="M12.643 15C13.979 15 15 13.845 15 12.5V5H1v7.5C1 13.845 2.021 15 3.357 15h9.286zM5.5 7h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1zM.8 1a.8.8 0 0 0-.8.8V3a.8.8 0 0 0 .8.8h14.4A.8.8 0 0 0 16 3V1.8a.8.8 0 0 0-.8-.8H.8z">
-                          </path>
-                        </svg> <span class="channel-name">${currentTarget && currentTarget.name}</span>
+                        ${currentTarget && target == 'blinds' ? html`
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-archive-fill" viewBox="0 0 16 16">
+                            <path d="M12.643 15C13.979 15 15 13.845 15 12.5V5H1v7.5C1 13.845 2.021 15 3.357 15h9.286zM5.5 7h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1zM.8 1a.8.8 0 0 0-.8.8V3a.8.8 0 0 0 .8.8h14.4A.8.8 0 0 0 16 3V1.8a.8.8 0 0 0-.8-.8H.8z">
+                            </path>
+                          </svg> 
+                          ` : html`
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill em-1" viewBox="0 0 16 16">
+                            <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
+                            </path>
+                          </svg> 
+                          ` } <span class="channel-name">${currentTarget && currentTarget.name}</span>
                       </div>
-                      <div class="col text-start">${boardTime && weekDays[boardTime.getDay()]}</div>
-                      <div class="col text-end">${ boardTime && `${('0' + boardTime.getDate()).slice(-2)}/${('0' + boardTime.getMonth()+1).slice(-2)}/${boardTime.getFullYear()}` }</div>
+                      <div class="col text-start">${boardTime ? weekDays[boardTime.getDay()] : '--'}</div>
+                      <div class="col text-end"> ${ boardTime ? `${('0' + boardTime.getDate()).slice(-2)}/${('0' + boardTime.getMonth()+1).slice(-2)}/${boardTime.getFullYear()}` : `--/--/----` }</div>
                     </div>
                   </div>
                 </div>
@@ -130,19 +137,19 @@ export function Remote({ active, blinds, groups, addSystemTimeListener }) {
               <ul class="list-group list-group-flush border-top mt-5 pt-2">
                   <li class="list-group-item">
                       <div class="btn-group w-100" role="group" aria-label="Basic radio toggle button group" data-bs-theme="dark">
-                      <label class="btn btn-outline-dark rounded-0 border border-0">
-                        <input type="radio" class="btn-check" name="btnradio" autocomplete="off" checked="" />
+                      <input type="radio" class="btn-check" name="target" id="f1" autocomplete="off" checked=${target == 'blinds'} onChange=${e => setTarget('blinds')} />
+                      <label class="btn btn-outline-dark rounded-0 border border-0" for="f1">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-archive-fill" viewBox="0 0 16 16">
-                          <path d="M12.643 15C13.979 15 15 13.845 15 12.5V5H1v7.5C1 13.845 2.021 15 3.357 15h9.286zM5.5 7h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1zM.8 1a.8.8 0 0 0-.8.8V3a.8.8 0 0 0 .8.8h14.4A.8.8 0 0 0 16 3V1.8a.8.8 0 0 0-.8-.8H.8z">
-                          </path>
+                            <path d="M12.643 15C13.979 15 15 13.845 15 12.5V5H1v7.5C1 13.845 2.021 15 3.357 15h9.286zM5.5 7h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1zM.8 1a.8.8 0 0 0-.8.8V3a.8.8 0 0 0 .8.8h14.4A.8.8 0 0 0 16 3V1.8a.8.8 0 0 0-.8-.8H.8z">
+                            </path>
                           </svg> Rolety
                       </label>
 
-                      <label class="btn btn-outline-dark rounded-0 border border-0">
-                          <input type="radio" class="btn-check" name="btnradio" autocomplete="off" />
+                      <input type="radio" class="btn-check" name="target" id="f2" autocomplete="off" checked=${target == 'groups'} onChange=${e => setTarget('groups')} />
+                      <label class="btn btn-outline-dark rounded-0 border border-0" for="f2">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill" viewBox="0 0 16 16">
-                          <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
-                          </path>
+                            <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
+                            </path>
                           </svg> Grupy
                       </label>
                       </div>
