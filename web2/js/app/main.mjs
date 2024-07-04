@@ -4,12 +4,13 @@ import { Blinds } from './pages/blinds.mjs';
 import { SubMenu } from './submenu/submenu.mjs';
 import { useEffect, useRef, useId, useState } from 'preact/hooks';
 import { Menu } from './menu.mjs';
+import { Groups } from './pages/groups.mjs';
     
 export function Main({ socket, addSystemTimeListener }) {
     const carouselId = useId();
     const menuId = useId();
     const carouselRef = useRef();
-    const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
+    const [currentCarouselIndex, setCurrentCarouselIndex] = useState(2);
 
     const [blinds, setBlinds] = useState([]);
     const [groups, setGroups] = useState([]);
@@ -21,20 +22,29 @@ export function Main({ socket, addSystemTimeListener }) {
         }
     };
 
+    const refreshGroups = async () => {
+        const response = await socket.send('groups:list');
+        if (response.status == 'OK') {
+            setGroups(response.data);
+        }
+    };
+
     useEffect(() => {
         carouselRef.current.addEventListener('slide.bs.carousel', event => {
             setCurrentCarouselIndex(event.to);
         });
 
         refreshBlinds();
+        refreshGroups();
     }, []);
 
     return html`
         <div class="container-xxl text-center h-100 position-relative">
             <div class="carousel slide h-100" data-bs-animation="50" id=${carouselId} ref=${carouselRef}>
                 <div class="carousel-inner h-100">
-                    <${Remote} socket=${socket} blinds=${blinds} groups=${groups} active="true" addSystemTimeListener=${addSystemTimeListener} />
+                    <${Remote} socket=${socket} blinds=${blinds} groups=${groups} addSystemTimeListener=${addSystemTimeListener} />
                     <${Blinds} socket=${socket} blinds=${blinds} setBlinds=${setBlinds} refreshBlinds=${refreshBlinds} />
+                    <${Groups} socket=${socket} blinds=${blinds} groups=${groups} active="true" refreshGroups=${refreshGroups} />
                 </div>
             </div>
             <${SubMenu} menuId=${menuId} currentCarouselIndex=${currentCarouselIndex} />

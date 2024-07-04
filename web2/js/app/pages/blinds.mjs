@@ -4,9 +4,8 @@ import { useRef, useId, useState, useEffect, useMemo } from 'preact/hooks';
 export function Blinds({ active, socket, blinds, refreshBlinds }) {
     const modalId = useId();
     const modalRef = useRef();
-    window.modalRef = modalRef;
-
     const [modal, setModal] = useState();
+
     const definedBlinds = useMemo(() => blinds.map(b => +b.channel), [blinds]);
     const [blind, setBlind] = useState({ id: '', channel: '', name: '' });
     const [action, setAction] = useState(null);
@@ -101,7 +100,7 @@ export function Blinds({ active, socket, blinds, refreshBlinds }) {
                   <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                       <div class="modal-header">
-                        <h5 class="modal-title">${action == 'add' ? 'Dodaj roletę' : (action == 'edit' ? 'Edytuj roletę' : 'Usuń roletę')}</h5>
+                        <h5 class="modal-title">${action == 'add' ? 'Dodaj' : (action == 'edit' ? 'Edytuj' : 'Usuń')} roletę</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                       </div>
                       <div class="modal-body">
@@ -121,7 +120,7 @@ export function Blinds({ active, socket, blinds, refreshBlinds }) {
                               </option>
                             `)}
                           </select>
-                          <label for="add-channel-no">Wybierz kanał</label>
+                          <label>Wybierz kanał</label>
                         </div>
 
                         <div class="form-floating">
@@ -129,7 +128,7 @@ export function Blinds({ active, socket, blinds, refreshBlinds }) {
                             value=${blind.name} onInput=${ e => setBlind({ ...blind, name: e.currentTarget.value }) } 
                             disabled=${['remove'].indexOf(action) > -1}
                           />
-                          <label for="add-channel-name" style="--bs-body-bg: transparent;">Nazwa</label>
+                          <label style="--bs-body-bg: transparent;">Nazwa</label>
                         </div>
                       </div>
                       <div class="modal-footer">
