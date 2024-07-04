@@ -5,7 +5,7 @@ import { SubMenu } from './submenu/submenu.mjs';
 import { useEffect, useRef, useId, useState, useMemo } from 'preact/hooks';
 import { Menu } from './menu.mjs';
     
-export function Main({ socket }) {
+export function Main({ socket, addSystemTimeListener }) {
     const carouselId = useId();
     const menuId = useId();
     const carouselRef = useRef();
@@ -33,7 +33,7 @@ export function Main({ socket }) {
         <div class="container-xxl text-center h-100 position-relative">
             <div class="carousel slide h-100" data-bs-animation="50" id=${carouselId} ref=${carouselRef}>
                 <div class="carousel-inner h-100">
-                    <${Remote} socket=${socket} blinds=${blinds} active="true"/>
+                    <${Remote} socket=${socket} blinds=${blinds} active="true" addSystemTimeListener=${addSystemTimeListener} />
                     <${Blinds} socket=${socket} blinds=${blinds} definedBlinds=${definedBlinds} setBlinds=${setBlinds} refreshBlinds=${refreshBlinds} />
                 </div>
             </div>

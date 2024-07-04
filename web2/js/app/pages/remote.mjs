@@ -1,20 +1,27 @@
 import { html } from 'htm/preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
     
 let actionIconTimeout = null;
+const weekDays = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So'];
 
-export function Remote({ active, blinds }) {
+export function Remote({ active, blinds, addSystemTimeListener }) {
   const [blind, setBlind] = useState();
   const [actionIcon, setActionIcon] = useState(null);
-
-  const remoteControll = (channel, action) => {
+  const [boardTime, setBoardTime] = useState(null);
+  
+  const runRemoteControll = (channel, action) => {
     clearTimeout(actionIconTimeout);
-
+    
     console.log(channel, action)
     setActionIcon(action);
-
+    
     actionIconTimeout = setTimeout(() => setActionIcon(null) , 5000);
   };
+  
+  const onSystemTime = (_, data) => {
+    setBoardTime(new Date(data.data * 1000));
+  };
+  const systemTimeListener = useMemo(() => (onSystemTime), []);
 
   useEffect(() => {
     const last = blinds.find(b => b.channel == blind?.channel);
@@ -26,6 +33,8 @@ export function Remote({ active, blinds }) {
     } else {
       setBlind();
     };
+
+    addSystemTimeListener(systemTimeListener);
 
   }, [blinds]);
 
@@ -48,7 +57,7 @@ export function Remote({ active, blinds }) {
                   </div>
                   <div class="fw-bold text-secondary-emphasis">
                     <div class="row px-2">
-                      <div class="col text-start">01:18</div>
+                      <div class="col text-start">${boardTime && `${('0' + boardTime.getHours()).slice(-2)}:${('0' + boardTime.getMinutes()).slice(-2)}`}</div>
                       <div class="col text-end">
                         ${actionIcon && actionIcon == 'up' ? html`
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-up blink" viewBox="0 0 16 16">
@@ -84,29 +93,29 @@ export function Remote({ active, blinds }) {
                           </path>
                         </svg> <span class="channel-name">${blind && blind.name}</span>
                       </div>
-                      <div class="col text-start">Pt</div>
-                      <div class="col text-end">01/01/2021</div>
+                      <div class="col text-start">${boardTime && weekDays[boardTime.getDay()]}</div>
+                      <div class="col text-end">${ boardTime && `${('0' + boardTime.getDate()).slice(-2)}/${('0' + boardTime.getMonth()+1).slice(-2)}/${boardTime.getFullYear()}` }</div>
                     </div>
                   </div>
                 </div>
               </div>
               <div style="border: 1px solid white;border-width: 0 10px 0 10px;">
                 <div class="vstack gap-1 py-2 px-1 border border-light-subtle">
-                  <button type="button" class="btn btn-outline-secondary rounded-0 p-0 border border-light-subtle" onClick=${e => remoteControll(blind.channel, 'up')}>
+                  <button type="button" class="btn btn-outline-secondary rounded-0 p-0 border border-light-subtle" onClick=${e => runRemoteControll(blind.channel, 'up')}>
                     <div class="w-100 p-2 text-secondary-emphasis border border-secondary-subtle border-top-0 border-start-0">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-up em-2" viewBox="0 0 16 16">
                         <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"></path>
                       </svg>
                     </div>
                   </button>
-                  <button type="button" class="btn btn-outline-secondary rounded-0 p-0 border border-light-subtle" onClick=${e => remoteControll(blind.channel, 'stop')}>
+                  <button type="button" class="btn btn-outline-secondary rounded-0 p-0 border border-light-subtle" onClick=${e => runRemoteControll(blind.channel, 'stop')}>
                     <div class="w-100 p-2 text-secondary-emphasis border border-secondary-subtle border-top-0 border-start-0">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stop em-2" viewBox="0 0 16 16">
                         <path d="M3.5 5A1.5 1.5 0 0 1 5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5zM5 4.5a.5.5 0 0 0-.5.5v6a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5V5a.5.5 0 0 0-.5-.5H5z"></path>
                       </svg>
                     </div>
                   </button>
-                  <button type="button" class="btn btn-outline-secondary rounded-0 p-0 border border-light-subtle" onClick=${e => remoteControll(blind.channel, 'down')}>
+                  <button type="button" class="btn btn-outline-secondary rounded-0 p-0 border border-light-subtle" onClick=${e => runRemoteControll(blind.channel, 'down')}>
                     <div class="w-100 p-2 text-secondary-emphasis border border-secondary-subtle border-top-0 border-start-0">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down em-2" viewBox="0 0 16 16">
                         <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"></path>

@@ -14,6 +14,9 @@ function App(props) {
     const socket = useMemo(() => createWebSocket(deviceId, wsUrl), []);
     const [socketState, setSocketState] = useState('Not Initialized');
     const [authStatus, setAuthStatus] = useState(null);
+    const [systemTimeListeners, setSystemTimeListeners] = useState([]);
+    const [systemTimeRegisteredListeners, setSystemTimeRegisteredListeners] = useState([]);
+    const notRegisteredSystemTimeListeners = useMemo(() => systemTimeListeners.filter(e => !systemTimeRegisteredListeners.includes(e)), [systemTimeListeners]);
 
     const [context, setContext] = useState({ deviceId: deviceId, device: null, authorized: false });
 
@@ -42,11 +45,25 @@ function App(props) {
         }
     }
 
+    const addSystemTimeListener = (listener) => {
+        if (systemTimeListeners.indexOf(listener) == -1) {
+            setSystemTimeListeners([ ...systemTimeListeners, listener ])
+        }
+    };
+
     useEffect(async () => {
         if (await initializeWebSocket()) {
             await authenticate();
         }
     }, []);
+
+    useEffect(() => {
+        for (let i in notRegisteredSystemTimeListeners) {
+            let listener = notRegisteredSystemTimeListeners[i];
+            socket.listen('system:time', listener);
+            setSystemTimeRegisteredListeners([ ...systemTimeRegisteredListeners, listener ]);
+        }
+    }, [systemTimeListeners]);
 
     return html`
         <${AppContext.Provider} value=${context}>
@@ -54,7 +71,7 @@ function App(props) {
                 html`<${Loading} status=${socketState} />` : 
                 authStatus && authStatus != "authorized" ? 
                     html`<${Auth} status=${authStatus} deviceId=${deviceId} requestAuthorization=${requestAuthorization} />` :
-                    html`<${Main} socket=${socket} />`
+                    html`<${Main} socket=${socket} addSystemTimeListener=${addSystemTimeListener} />`
             }
         <//>
     `;
