@@ -7,6 +7,7 @@ import { Auth } from './auth.mjs';
 import { Main } from './app/main.mjs';
 
 const AppContext = createContext({});
+const systemTimeListeners = [];
 
 function App(props) {
     const deviceId = props.deviceId;
@@ -14,9 +15,6 @@ function App(props) {
     const socket = useMemo(() => createWebSocket(deviceId, wsUrl), []);
     const [socketState, setSocketState] = useState('Not Initialized');
     const [authStatus, setAuthStatus] = useState(null);
-    const [systemTimeListeners, setSystemTimeListeners] = useState([]);
-    const [systemTimeRegisteredListeners, setSystemTimeRegisteredListeners] = useState([]);
-    const notRegisteredSystemTimeListeners = useMemo(() => systemTimeListeners.filter(e => !systemTimeRegisteredListeners.includes(e)), [systemTimeListeners]);
 
     const [context, setContext] = useState({ deviceId: deviceId, device: null, authorized: false });
 
@@ -47,23 +45,24 @@ function App(props) {
 
     const addSystemTimeListener = (listener) => {
         if (systemTimeListeners.indexOf(listener) == -1) {
-            setSystemTimeListeners([ ...systemTimeListeners, listener ])
+            systemTimeListeners.push(listener);
         }
+    };
+
+    const initializeSystemTimeListener = () => {
+        socket.listen('system:time', (cmd, data) => {
+            for (let i in systemTimeListeners) {
+                systemTimeListeners[i](cmd, data);
+            }
+        });
     };
 
     useEffect(async () => {
         if (await initializeWebSocket()) {
             await authenticate();
+            initializeSystemTimeListener();            
         }
     }, []);
-
-    useEffect(() => {
-        for (let i in notRegisteredSystemTimeListeners) {
-            let listener = notRegisteredSystemTimeListeners[i];
-            socket.listen('system:time', listener);
-            setSystemTimeRegisteredListeners([ ...systemTimeRegisteredListeners, listener ]);
-        }
-    }, [systemTimeListeners]);
 
     return html`
         <${AppContext.Provider} value=${context}>

@@ -36,10 +36,11 @@ export function Remote({ active, blinds, groups, addSystemTimeListener }) {
     } else {
       setCurrentTarget();
     };
-
-    addSystemTimeListener(systemTimeListener);
-
   }, [targetList]);
+
+  useEffect(() => {
+    addSystemTimeListener(systemTimeListener);
+  }, []);
 
   return html`
       <div class="carousel-item h-100 ${active ? 'active': ''}" data-page="remote">

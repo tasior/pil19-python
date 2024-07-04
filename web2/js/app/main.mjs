@@ -6,12 +6,13 @@ import { useEffect, useRef, useId, useState } from 'preact/hooks';
 import { Menu } from './menu.mjs';
 import { Groups } from './pages/groups.mjs';
 import { Schedules } from './pages/schedules.mjs';
+import { Settings } from './pages/settings.mjs';
     
 export function Main({ socket, addSystemTimeListener }) {
     const carouselId = useId();
     const menuId = useId();
     const carouselRef = useRef();
-    const [currentCarouselIndex, setCurrentCarouselIndex] = useState(3);
+    const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
 
     const [blinds, setBlinds] = useState([]);
     const [groups, setGroups] = useState([]);
@@ -38,17 +39,18 @@ export function Main({ socket, addSystemTimeListener }) {
 
         refreshBlinds();
         refreshGroups();
-        refreshSchedules();
+        // refreshSchedules();
     }, []);
 
     return html`
         <div class="container-xxl text-center h-100 position-relative">
             <div class="carousel slide h-100" data-bs-animation="50" id=${carouselId} ref=${carouselRef}>
                 <div class="carousel-inner h-100">
-                    <${Remote} socket=${socket} blinds=${blinds} groups=${groups} addSystemTimeListener=${addSystemTimeListener} />
+                    <${Remote} active="true" socket=${socket} blinds=${blinds} groups=${groups} addSystemTimeListener=${addSystemTimeListener} />
                     <${Blinds} socket=${socket} blinds=${blinds} setBlinds=${setBlinds} refreshBlinds=${refreshBlinds} />
                     <${Groups} socket=${socket} blinds=${blinds} groups=${groups} refreshGroups=${refreshGroups} />
-                    <${Schedules} active="true" socket=${socket} schedules=${schedules} blinds=${blinds} groups=${groups} refreshSchedules=${refreshSchedules}  />
+                    <${Schedules} socket=${socket} schedules=${schedules} blinds=${blinds} groups=${groups} refreshSchedules=${refreshSchedules}  />
+                    <${Settings} socket=${socket} addSystemTimeListener=${addSystemTimeListener} />
                 </div>
             </div>
             <${SubMenu} menuId=${menuId} currentCarouselIndex=${currentCarouselIndex} />
