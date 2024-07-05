@@ -1,13 +1,16 @@
 import sys
 import uasyncio as asyncio
 from machine import soft_reset
-from time import sleep
+from time import sleep, localtime, time
 
 from config import read_config, MODE_ADMIN
 from pil19 import Pil19
 from wifi import WiFi, WLAN_MODE_AP, WLAN_MODE_IF, EVENT_CONNECTING, EVENT_CONNECTED, EVENT_CONNECTION_ERROR, EVENT_DISCONNECT
 from server_app import AppServer
 from server_admin import AdminServer
+
+from sched import schedule, cron
+from scheduler import Scheduler
 
 wlan: WiFi | None = None
 
@@ -16,23 +19,25 @@ def on_wlan(wlan: WiFi, event, data = None):
     if event == EVENT_CONNECTED:
         print('[Wlan] Connected. IP: {}'.format(wlan.ip()))
 
-# async def server(i):
-#     try:
-#         while True:
-#             print('[Server] loop {}'.format(i))
-#             await asyncio.sleep(2)
-#             asyncio.create_task(server(2))
-#     except asyncio.CancelledError:
-#         print('server task cancelled')
+def foo(txt):  # Demonstrate callback
+    yr, mo, md, h, m, s, wd = localtime()[:7]
+    fst = 'Callback {} {:02d}:{:02d}:{:02d} on {:02d}/{:02d}/{:02d}'
+    print(fst.format(txt, h, m, s, md, mo, yr))
 
-async def cron():
-    while True:
-        print('[Cron] loop')
-        await asyncio.sleep(50)
+async def initialize_cron():
+    kwargs = {'hrs': None, 'mins': range(0, 60, 2), 'wday': 4}
+    t = time()
+    c = cron(**kwargs) # type: ignore
+    print(c(t))
+    print(t + c(t)) # type: ignore
+    asyncio.create_task(schedule(foo, 'every 2 mins', **kwargs))
+    # while True:
+    #     print('[Cron] loop')
+    #     await asyncio.sleep(50)
 
 
-async def main(server_coro, cron_coro):
-    asyncio.create_task(cron_coro)
+async def main(server_coro, scheduler: Scheduler):
+    scheduler.start()
     await asyncio.create_task(server_coro) # type: ignore
 
 try:
@@ -65,9 +70,11 @@ try:
         server = AppServer(config=config, pil19=pil19, wlan=wlan, port=80, index_path='/web/index.html')
 
     print('[Main] Initializing cron...')
-    config_cron = read_config(b'./.config_cron')
+    config_cron_path = b'./.config_cron'
+    scheduler = Scheduler(config_path=config_cron_path, pil19=pil19)
+    scheduler.initialize()
 
-    asyncio.run(main(server_coro=server.run(), cron_coro=cron()))
+    asyncio.run(main(server_coro=server.run(), scheduler=scheduler))
 except Exception as e:
     print('[Main] Exception')
     sys.print_exception(e) # type: ignore

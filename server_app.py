@@ -1,9 +1,10 @@
 from server import IServer
 from microdot_asyncio import Request
-from config import write_config, read_config
+from config import write_config, read_config, write_cron_config, read_cron_config
 from machine import RTC
 import uasyncio as asyncio
 import time
+from pil19 import Pil19, CMD_UP, CMD_STOP, CMD_DOWN, CMD_DOWN_LAMEL, CMD_UP_LAMEL, CMD_PAIR
 
 class AppServer(IServer):
 
@@ -22,26 +23,44 @@ class AppServer(IServer):
             'groups:add': self.cmd_groups_add,
             'groups:edit': self.cmd_groups_edit,
             'groups:remove': self.cmd_groups_remove,
+            'remote:action': self.cmd_remote_action
         }
         self.rtc = RTC()
 
     async def run(self):
-        asyncio.create_task(self.broadcast_time(self.rtc))
+        asyncio.create_task(self.broadcast_time())
         return await super().run()
 
-    async def broadcast_time(self, rtc: RTC):
+    async def broadcast_time(self):
         while True:
             await self.broadcast({ 'cmd': 'system:time', 'status': 'OK', 'data': time.time() })
             await asyncio.sleep(1)
 
-    def read_cron_config(self):
-        return read_config(file=b'/.confg_cron')
+    async def cmd_remote_action(self, cmd):
+        target = cmd['data']['target']
+        targetId = cmd['data']['targetId']
+        action = cmd['data']['action']
 
-    def write_cron_config(self, config):
-        write_config(config=config, file=b'/.confg_cron')
+        config = read_cron_config()
+        target_config = config.get(target, [])
+        try:
+            i = next(i for i, _target in enumerate(target_config) if _target.get('id') == targetId)
+            target_entry = target_config[i]
+            target_channels = target_entry.get('blinds', target_entry.get('channel'))
+            
+            for channel in target_channels:
+                self.debug("Pil19: {}, {}".format(channel, action))
+                # self.pil19.send(channel, action)
+
+        except StopIteration:
+            raise ValueError('{} not exists'.format(target[0].upper() + target[1:-1]))
+        except Exception as e:
+            raise e
+
+        return 'OK'
 
     def target_list(self, target):
-        cron_config = self.read_cron_config()
+        cron_config = read_cron_config()
         return cron_config.get(target, [])
 
     async def cmd_blinds_list(self, _):
@@ -51,13 +70,13 @@ class AppServer(IServer):
         return self.target_list('groups')
     
     def target_add(self, target, data):
-        cron_config = self.read_cron_config()
+        cron_config = read_cron_config()
         target_data = cron_config.get(target, [])
 
         if data not in target_data:
             target_data.append(data)
             cron_config[target] = target_data
-            self.write_cron_config(cron_config)
+            write_cron_config(cron_config)
         else:
             raise ValueError('{} already exists'.format(target[0].upper() + target[1:-1]))
 
@@ -70,14 +89,14 @@ class AppServer(IServer):
         return self.target_add('groups', cmd['data'])
 
     def target_edit(self, target, data):
-        cron_config = self.read_cron_config()
+        cron_config = read_cron_config()
         target_data = cron_config.get(target, [])
 
         try:
             i = next(i for i, _target in enumerate(target_data) if _target.get('id') == data['id'])
             target_data[i] = data
             cron_config[target] = target_data
-            self.write_cron_config(cron_config)
+            write_cron_config(cron_config)
         except StopIteration:
             raise ValueError('{} not exists'.format(target[0].upper() + target[1:-1]))
         except Exception as e:
@@ -92,13 +111,13 @@ class AppServer(IServer):
         return self.target_edit('groups', cmd['data'])
 
     def target_remove(self, target, data):
-        cron_config = self.read_cron_config()
+        cron_config = read_cron_config()
         target_data = cron_config.get(target, [])
 
         try:
             target_data.remove(data)
             cron_config[target] = target_data
-            self.write_cron_config(cron_config)
+            write_cron_config(cron_config)
         except ValueError:
             raise ValueError('{} not exists'.format(target[0].upper() + target[1:-1]))
         except Exception as e:

@@ -10,6 +10,15 @@ CMD_DOWN = const(0xc0)
 CMD_DOWN_LAMEL = const(0xd0)
 CMD_PAIR = const(0xe0)
 
+pil19_command = {
+    'up': CMD_UP,
+    'down': CMD_DOWN,
+    'stop': CMD_STOP,
+    'lamen_down': CMD_DOWN_LAMEL,
+    'lamel_up': CMD_UP_LAMEL,
+    'pair': CMD_PAIR
+}
+
 @asm_pio(set_init=PIO.OUT_HIGH)
 def pil19_send_data_pio():
     wrap_target()
@@ -63,7 +72,10 @@ class Pil19:
         self.sm = StateMachine(pio, prog=pil19_send_data_pio, freq=100_000, set_base=Pin(data_base, Pin.OUT, Pin.PULL_UP), in_base=self.rx_pin)
         self.sm.active(1)
 
-    def send(self, command):
+    def send(self, channel: int, action: str):
+        self.send_raw(self.send_raw(Pil19.command((0x80 + channel), pil19_command[action])))
+
+    def send_raw(self, command):
         self.timer.deinit()
         self.tx_pin.high()
         while self.rx_pin.value() == 0:
