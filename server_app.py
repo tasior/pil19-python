@@ -5,10 +5,11 @@ from machine import RTC
 import uasyncio as asyncio
 import time
 from pil19 import Pil19, CMD_UP, CMD_STOP, CMD_DOWN, CMD_DOWN_LAMEL, CMD_UP_LAMEL, CMD_PAIR
+from scheduler import Scheduler
 
 class AppServer(IServer):
 
-    def __init__(self, config: dict, pil19, scheduler, wlan, port, index_path) -> None:
+    def __init__(self, config: dict, pil19: Pil19, scheduler: Scheduler, wlan, port, index_path) -> None:
         super().__init__(config, pil19, wlan, port, index_path)
         self.handlers = {
             'auth:check': self.cmd_auth_check,
@@ -23,7 +24,13 @@ class AppServer(IServer):
             'groups:add': self.cmd_groups_add,
             'groups:edit': self.cmd_groups_edit,
             'groups:remove': self.cmd_groups_remove,
-            'remote:action': self.cmd_remote_action
+            'remote:action': self.cmd_remote_action,
+            'schedules:list': self.cmd_schedules_list,
+            'schedules:add': self.cmd_schedules_add,
+            'schedules:edit': self.cmd_schedules_edit,
+            'schedules:remove': self.cmd_schedules_remove,
+            'schedules:enable': self.cmd_schedules_enable,
+            'schedules:disable': self.cmd_schedules_disable,
         }
         self.rtc = RTC()
         self.scheduler = scheduler
@@ -70,6 +77,9 @@ class AppServer(IServer):
     async def cmd_groups_list(self, _):
         return self.target_list('groups')
     
+    async def cmd_schedules_list(self, _):
+        return self.target_list('schedules')
+
     def target_add(self, target, data):
         cron_config = read_cron_config()
         target_data = cron_config.get(target, [])
@@ -88,6 +98,11 @@ class AppServer(IServer):
     
     async def cmd_groups_add(self, cmd):
         return self.target_add('groups', cmd['data'])
+
+    async def cmd_schedules_add(self, cmd):
+        schedule = cmd['data']
+        self.scheduler.add(schedule)
+        return self.target_add('schedules', schedule)
 
     def target_edit(self, target, data):
         cron_config = read_cron_config()
@@ -110,6 +125,11 @@ class AppServer(IServer):
     
     async def cmd_groups_edit(self, cmd):
         return self.target_edit('groups', cmd['data'])
+    
+    async def cmd_schedules_edit(self, cmd):
+        schedule = cmd['data']
+        self.scheduler.edit(schedule)
+        return self.target_edit('schedules', schedule)
 
     def target_remove(self, target, data):
         cron_config = read_cron_config()
@@ -131,6 +151,16 @@ class AppServer(IServer):
     
     async def cmd_groups_remove(self, cmd):
         return self.target_remove('groups', cmd['data'])
+
+    async def cmd_schedules_remove(self, cmd):
+        self.scheduler.remove(cmd['data']['id'])
+        return self.target_remove('schedules', cmd['data'])
+
+    async def cmd_schedules_enable(self, cmd):
+        pass
+
+    async def cmd_schedules_disable(self, cmd):
+        pass
 
     async def cmd_system_set_time(self, cmd):
         timestamp = cmd['data']

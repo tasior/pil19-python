@@ -43,14 +43,34 @@ class Scheduler:
 
     def initialize(self):
         config = read_config(self.config_path)
-        blins = config.get('blinds', [])
-        groups = config.get('groups', [])
         schedules = config.get('schedules', [])
 
         for schedule in schedules:
-            self.tasks[schedule['id']] = self.create_task(**schedule, blinds=blins, groups=groups)
+            self.add(schedule, False)
 
-    def create_task(self, blinds, groups, id, enabled, schedule, target, targetId, action):
+    def add(self, schedule, start=True):
+        task = self.create_task(**schedule)
+        self.tasks[task.id] = task
+
+        if start and task.enabled:
+            task.start()
+
+    def remove(self, id):
+        task = self.tasks.pop(id)
+        if task is not None:
+            if task.running:
+                task.stop()
+    
+    def edit(self, schedule):
+        self.remove(schedule.id)
+        self.add(schedule)
+
+
+    def create_task(self, id, enabled, schedule, target, targetId, action):
+        config = read_config(self.config_path)
+        blinds = config.get('blinds', [])
+        groups = config.get('groups', [])
+
         def func(target, action):
             txt = 'fun target: {}, targetId: {}, action: {}'.format(target, targetId, action)
             yr, mo, md, h, m, s, wd = localtime()[:7]
@@ -74,3 +94,13 @@ class Scheduler:
             if task.running:
                 print('task stop')
                 task.stop()
+
+    def start_task(self, id):
+        task = self.tasks.get(id)
+        if task is not None and task.enabled:
+            task.start()
+
+    def stop_task(self, id):
+        task = self.tasks.get(id)
+        if task is not None and task.running:
+            task.stop()
