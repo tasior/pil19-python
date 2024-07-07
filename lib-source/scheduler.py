@@ -9,6 +9,7 @@ class SchedulerTask:
     def __init__(self, id, enabled, schedule, func, *args) -> None:
         self.id = id
         self.enabled = enabled
+        self.running = False
         self.schedule = schedule
         self.atask = None
         self.func = func
@@ -20,8 +21,10 @@ class SchedulerTask:
                 print("schedule")
                 print(self.args)
                 print(self.schedule)
+                self.running = True
                 await schedule(self.func, *self.args, **self.schedule)
             except asyncio.CancelledError:
+                self.running = False
                 print('task {} cancelled'.format(self.args))
 
         self.atask = asyncio.create_task(task())
@@ -64,3 +67,10 @@ class Scheduler:
                 print('task start')
                 task.start()
 
+    def stop(self):
+        print('scheduler stop')
+        for id, task in self.tasks.items():
+            print("Stop task({})".format(id))
+            if task.running:
+                print('task stop')
+                task.stop()

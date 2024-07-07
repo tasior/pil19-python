@@ -1,11 +1,59 @@
 import { html } from 'htm/preact';
 import { useRef, useId, useState, useEffect, useMemo } from 'preact/hooks';
 
-let _schedules = [
-    { id: 1, name: '' }
-];
+const weekDays = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'];
 
-export function Schedules({ active, socket, blinds, groups, refreshSchedules }) {
+export function Schedules({ active, socket, blinds, groups, schedules, refreshSchedules }) {
+    const modalId = useId();
+    const modalRef = useRef();
+    const [modal, setModal] = useState();
+
+    const nextId = useMemo(() => schedules.reduce((acc, g) => g.id > acc ? g.id : acc, 0) + 1, [schedules]);
+    const [schedule, setSchedule] = useState({ 
+      id: null, 
+      enabled: true, 
+      target: 'blinds', 
+      targetId: blinds.length > 0 ? blinds[0].id: null, 
+      action: 'up', 
+      schedule: {
+        wday: [...Array(7).keys()], hrs: 0, mins: 0, secs: 0
+      } });
+    const [action, setAction] = useState(null);
+    const [error, setError] = useState(null);
+    const targetList = useMemo(() => schedule.target == 'blinds' ? blinds : groups, [schedule]);
+
+    const onShowModal = (action, schedule) => {
+      setAction(action);
+      setSchedule(schedule);
+      setError(null);
+      modal.show();
+    };
+
+    const onSubmit = async e => {
+      e.preventDefault();
+      console.log(schedule)
+      try {
+        if (action == 'add' && (!schedule.targetId || schedule.schedule.wday.length < 1)) {
+          throw 'Uzupełnij wszystkie pola';
+        }
+        const response = await socket.send(`schedules:${action}`, schedule);
+        if (response.status == 'ERROR') {
+          setError(response.error_message);
+        } else {
+          refreshBlinds();
+          modal.hide();
+        }
+      } catch(e) {
+        setError(e);
+      }
+
+      
+      return false;
+    };
+
+    useEffect(() => {
+      setModal(new bootstrap.Modal(modalRef.current))
+    }, [modalRef]);
 
     return html`
         <div class="carousel-item h-100 ${active ? 'active': ''}" data-page="cron">
@@ -113,7 +161,7 @@ export function Schedules({ active, socket, blinds, groups, refreshSchedules }) 
               <div class="col col-12 py-0 text-start">
                 <div class="row gy-2 p-0 m-0">
                   <div class="col col-12" style="--bs-bg-opacity: .5;">
-                    <button class="btn p-2" data-bs-toggle="modal" data-bs-target="#add-schedule">
+                    <button class="btn p-2" onClick=${_ => onShowModal('add', { ...schedule, id: nextId, targetId: blinds.length > 0 ? blinds[0].id: null })}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-square em-1" viewBox="0 0 16 16">
                         <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z" />
                         <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
@@ -123,36 +171,120 @@ export function Schedules({ active, socket, blinds, groups, refreshSchedules }) 
                 </div>
               </div>
               <!-- MODAL -->
-              <div class="modal" tabindex="-1" id="add-schedule">
-                <div class="modal-dialog modal-dialog-centered">
-                  <div class="modal-content">
-                    <div class="modal-header">
-                      <h5 class="modal-title">Dodaj grupę</h5>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                      <div class="form-floating pb-2">
-                        <select class="form-select rounded-0" id="add-schedule-channels" aria-label="Wybierz rolety" size="5" multiple style="height: auto;">
-                          <option value="0">00</option>
-                          <option value="1">01</option>
-                          <option value="2">02</option>
-                          <option value="3">03</option>
-                          <option value="4">04</option>
-                          <option value="5">05</option>
-                        </select>
-                        <label for="add-schedule-channels">Wybierz rolety</label>
+              <div class="modal" tabindex="-1" id=${modalId} ref=${modalRef}>
+                <form onSubmit=${onSubmit}>
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">${action == 'add' ? 'Dodaj' : (action == 'edit' ? 'Edytuj' : 'Usuń')} harmonogram</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                       </div>
+                      <div class="modal-body">
+                        ${error ? html`<div class="form-floating pb-3 text-start">Błąd: <span class="text-danger error-message"><b>${error}</b><br/></span></div>` : ''}
+                        <div class="form-floating pb-2">
+                            <input type="text" class="form-control rounded-0" value=${schedule.id} disabled=${true} />
+                            <label style="--bs-body-bg: transparent;">ID</label>
+                        </div>
+                        <div class="form-floating pb-2">
+                          <select class="form-select rounded-0" style="height: auto;"
+                            value=${schedule.target} 
+                            onChange=${ e => setSchedule({ ...schedule, target: e.currentTarget.value, targetId: null }) }
+                            disabled=${['remove'].indexOf(action) > -1}
+                          >
+                            <option value="blinds">Rolety</option>
+                            <option value="groups">Grupy</option>
+                          </select>
+                          <label for="add-schedule-channels">Wybierz cel</label>
+                        </div>
 
-                      <div class="form-floating">
-                        <input type="text" class="form-control rounded-0" id="add-schedule-name" />
-                        <label for="add-schedule-name">Nazwa</label>
+                        <div class="form-floating pb-2">
+                          <select class="form-select rounded-0" style="height: auto;"
+                            value=${schedule.targetId} 
+                            onChange=${ e => setSchedule({ ...schedule, targetId: +e.currentTarget.value }) }
+                            disabled=${['remove'].indexOf(action) > -1}
+                          >
+                            ${ targetList.map(t => html`<option value="${t.id}">${('0' + t.id).slice(-2)}  ${t.name}</option>`) }                            
+                          </select>
+                          <label for="add-schedule-channels">Wybierz ${schedule.target == 'blinds' ? 'roletę' : 'grupę'}</label>
+                        </div>
+
+                        <div class="form-floating pb-2">
+                          <select class="form-select rounded-0" style="height: auto;"
+                            value=${schedule.action} 
+                            onChange=${ e => setSchedule({ ...schedule, action: e.currentTarget.value }) }
+                            disabled=${['remove'].indexOf(action) > -1}
+                          >
+                            <option value="up">Otwórz</option>
+                            <option value="down">Zamknij</option>
+                            <option value="stop">Zatrzymaj</option>
+                          </select>
+                          <label for="add-schedule-channels">Wybierz akcję</label>
+                        </div>
+
+                        <div class="form-floating pb-2">
+                          <select class="form-select rounded-0" size="5" multiple style="height: auto;" 
+                            onChange=${ e => setSchedule({ ...schedule, schedule: { ...schedule.schedule, wday: [...e.currentTarget.options].reduce((acc, o) => {o.selected && acc.push(o); return acc;}, []).map(o => +o.value) } }) }
+                            disabled=${['remove'].indexOf(action) > -1}
+                          >
+                            ${weekDays.map((d, i) => html`
+                              <option value=${i} selected=${schedule && schedule.schedule.wday && schedule.schedule.wday.indexOf(i) > -1}>${d}</option>
+                            `)}
+                          </select>
+                          <label for="add-schedule-channels">Wybierz dni tygodnia</label>
+                        </div>
+
+                        <div class="row pb-2">
+                          <div class="col">
+                            <div class="form-floating">
+                              <select class="form-select rounded-0" 
+                                value=${schedule.schedule.hrs}
+                                onChange=${ e => setSchedule({ ...schedule, schedule: { ...schedule.schedule, hrs: +e.currentTarget.value } }) }
+                                disabled=${['remove'].indexOf(action) > -1}
+                              >
+                                ${[...Array(24).keys()].map((v) => html`
+                                  <option value=${v}>${v}</option>
+                                `)}
+                              </select>
+                              <label for="add-schedule-channels">Godz.</label>
+                            </div>
+                          </div>
+                          <div class="col">
+                            <div class="form-floating">
+                              <select class="form-select rounded-0" 
+                                value=${schedule.schedule.mins}
+                                onChange=${ e => setSchedule({ ...schedule, schedule: { ...schedule.schedule, mins: +e.currentTarget.value } }) }
+                                disabled=${['remove'].indexOf(action) > -1}
+                              >
+                                ${[...Array(60).keys()].map((v) => html`
+                                  <option value=${v}>${v}</option>
+                                `)}
+                              </select>
+                              <label for="add-schedule-channels">Min.</label>
+                            </div>
+                          </div>
+                          <div class="col">
+                            <div class="form-floating">
+                              <select class="form-select rounded-0" 
+                                value=${schedule.schedule.secs}
+                                onChange=${ e => setSchedule({ ...schedule, schedule: { ...schedule.schedule, secs: +e.currentTarget.value } }) }
+                                disabled=${['remove'].indexOf(action) > -1}
+                              >
+                                ${[...Array(60).keys()].map((v) => html`
+                                  <option value=${v}>${v}</option>
+                                `)}
+                              </select>
+                              <label for="add-schedule-channels">Sek.</label>
+                            </div>
+                          </div>
+                        </div>
+
                       </div>
-                    </div>
-                    <div class="modal-footer">
-                      <button type="button" class="btn btn-warning">Dodaj</button>
+                      <div class="modal-footer">
+                        <button type="submit" class="btn btn-warning">${action == 'add' ? 'Dodaj' : (action == 'edit' ? 'Edytuj' : 'Usuń')}</button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </form>
               </div>
             </div>
           </div>

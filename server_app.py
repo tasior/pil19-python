@@ -8,7 +8,7 @@ from pil19 import Pil19, CMD_UP, CMD_STOP, CMD_DOWN, CMD_DOWN_LAMEL, CMD_UP_LAME
 
 class AppServer(IServer):
 
-    def __init__(self, config: dict, pil19, wlan, port, index_path) -> None:
+    def __init__(self, config: dict, pil19, scheduler, wlan, port, index_path) -> None:
         super().__init__(config, pil19, wlan, port, index_path)
         self.handlers = {
             'auth:check': self.cmd_auth_check,
@@ -26,6 +26,7 @@ class AppServer(IServer):
             'remote:action': self.cmd_remote_action
         }
         self.rtc = RTC()
+        self.scheduler = scheduler
 
     async def run(self):
         asyncio.create_task(self.broadcast_time())
@@ -137,6 +138,10 @@ class AppServer(IServer):
         local = time.localtime(timestamp)
         # (year, month, day, weekday, hours, minutes, seconds, subseconds)
         self.rtc.datetime(local[0:3] + tuple([local[6]]) + local[3:6] + tuple([0]))
+
+        self.scheduler.stop()
+        self.scheduler.start()
+
         return 'OK'
 
     async def cmd_auth_check(self, cmd):
