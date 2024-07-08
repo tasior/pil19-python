@@ -9,7 +9,7 @@ export function Schedules({ active, socket, blinds, groups, schedules, refreshSc
     const [modal, setModal] = useState();
 
     const nextId = useMemo(() => schedules.reduce((acc, g) => g.id > acc ? g.id : acc, 0) + 1, [schedules]);
-    const [schedule, setSchedule] = useState({ 
+    const defaultSchedule = { 
       id: null, 
       enabled: true, 
       target: 'blinds', 
@@ -17,7 +17,8 @@ export function Schedules({ active, socket, blinds, groups, schedules, refreshSc
       action: 'up', 
       schedule: {
         wday: [...Array(7).keys()], hrs: 0, mins: 0, secs: 0
-      } });
+    } };
+    const [schedule, setSchedule] = useState(defaultSchedule);
     const [action, setAction] = useState(null);
     const [error, setError] = useState(null);
     const targetList = useMemo(() => schedule.target == 'blinds' ? blinds : groups, [schedule]);
@@ -40,7 +41,7 @@ export function Schedules({ active, socket, blinds, groups, schedules, refreshSc
         if (response.status == 'ERROR') {
           setError(response.error_message);
         } else {
-          refreshBlinds();
+          refreshSchedules();
           modal.hide();
         }
       } catch(e) {
@@ -49,6 +50,20 @@ export function Schedules({ active, socket, blinds, groups, schedules, refreshSc
 
       
       return false;
+    };
+
+    const onChange = async (schedule, enabled) => {
+      schedule.enabled = enabled;
+      try {
+        const response = await socket.send(`schedules:edit`, schedule);
+        if (response.status == 'ERROR') {
+          alert(response.error_message);
+        } else {
+          refreshSchedules();
+        }
+      } catch(e) {
+        alert(e.message);
+      } 
     };
 
     useEffect(() => {
@@ -68,100 +83,58 @@ export function Schedules({ active, socket, blinds, groups, schedules, refreshSc
                 </p>
               </div>
               <div class="col col-12 py-0 text-start">
-                <div class="row gy-2 p-0 m-0 mt-2 bg-secondary-subtle">
-                  <div class="col col-2 py-2 m-0">
-                    <div class="p-2">
-                      <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" checked />
+                ${schedules.map(s => html`
+                  <div class="row gy-2 p-0 m-0 mt-2 ${s.enabled ? 'bg-secondary-subtle': 'bg-light-subtle' }">
+                    <div class="col col-2 py-2 m-0">
+                      <div class="p-2">
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" role="switch" checked=${s.enabled} onChange=${e => onChange(s, e.currentTarget.checked)} />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col col-5 py-2 m-0">
+                      <figure class="m-0">
+                        <blockquote class="blockquote fs-6 text-truncate">
+                          ${('0' + s.schedule?.hrs).slice(-2)}:${('0' + s.schedule?.mins).slice(-2)}, ${s.schedule?.wday?.map((d, i) => html`${i > 0 && ', '}${weekDays[d]}`)}
+                        </blockquote>
+                        <figcaption class="blockquote-footer mb-0">
+                          ${('0' + s.id).slice(-2)} ${ { 'up': 'Otwórz', 'down': 'Zamknij', 'stop': 'Zatrzymaj'}[s.action] } ${s.target == 'blinds' ? 'roletę' : 'grupę'}: ${('0' + s.targetId).slice(-2)}
+                        </figcaption>
+                      </figure>
+                    </div>
+                    <div class="col col-5 py-2 m-0 text-end">
+                      <button class="btn p-2" data-bs-toggle="collapse" data-bs-target="#info-${s.id}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle-fill em-1" viewBox="0 0 16 16">
+                          <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                        </svg>
+                      </button>
+                      <button class="btn p-2" onClick=${_ => onShowModal('edit', s)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil em-1" viewBox="0 0 16 16">
+                          <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                        </svg>
+                      </button>
+                      <button class="btn p-2 text-danger" onClick=${_ => onShowModal('remove', s)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3 em-1" viewBox="0 0 16 16">
+                          <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="col col-12 mt-0 collapse" id="info-${s.id}">
+                      <div class="border-top p-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill em-1" viewBox="0 0 16 16">
+                          <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
+                          </path>
+                        </svg> [ <strong>05</strong> Dzieci, <strong>06</strong> Sypialnia, <strong>07</strong> Biuro ]
                       </div>
                     </div>
                   </div>
-                  <div class="col col-5 py-2 m-0">
-                    <figure class="m-0">
-                      <blockquote class="blockquote fs-6 text-truncate">
-                        00 Otwórz wszystkie
-                      </blockquote>
-                      <figcaption class="blockquote-footer mb-0">
-                        7:00, Pn-Pt
-                      </figcaption>
-                    </figure>
-                  </div>
-                  <div class="col col-5 py-2 m-0 text-end">
-                    <button class="btn p-2" data-bs-toggle="collapse" data-bs-target="#hamr-details-0">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle-fill em-1" viewBox="0 0 16 16">
-                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-                      </svg>
-                    </button>
-                    <button class="btn p-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil em-1" viewBox="0 0 16 16">
-                        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
-                      </svg>
-                    </button>
-                    <button class="btn p-2 text-danger">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3 em-1" viewBox="0 0 16 16">
-                        <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div class="col col-12 mt-0 collapse" id="hamr-details-0">
-                    <div class="border-top p-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill em-1" viewBox="0 0 16 16">
-                        <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
-                        </path>
-                      </svg> [ <strong>05</strong> Dzieci, <strong>06</strong> Sypialnia, <strong>07</strong> Biuro ]
-                    </div>
-                  </div>
-                </div>
-                <div class="row gy-2 p-0 m-0 mt-2 bg-light-subtle">
-                  <div class="col col-2 py-2 m-0">
-                    <div class="p-2">
-                      <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" />
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col col-5 py-2 m-0">
-                    <figure class="m-0">
-                      <blockquote class="blockquote fs-6 text-truncate">
-                        01 Zamknij wszystkie
-                      </blockquote>
-                      <figcaption class="blockquote-footer mb-0">
-                        21:00, Pn-Pt
-                      </figcaption>
-                    </figure>
-                  </div>
-                  <div class="col col-5 py-2 m-0 text-end">
-                    <button class="btn p-2" data-bs-toggle="collapse" data-bs-target="#hamr-details-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle-fill em-1" viewBox="0 0 16 16">
-                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-                      </svg>
-                    </button>
-                    <button class="btn p-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil em-1" viewBox="0 0 16 16">
-                        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
-                      </svg>
-                    </button>
-                    <button class="btn p-2 text-danger">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3 em-1" viewBox="0 0 16 16">
-                        <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div class="col col-12 mt-0 collapse" id="hamr-details-1">
-                    <div class="border-top p-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill em-1" viewBox="0 0 16 16">
-                        <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
-                        </path>
-                      </svg> [ <strong>05</strong> Dzieci, <strong>06</strong> Sypialnia, <strong>07</strong> Biuro ]
-                    </div>
-                  </div>
-                </div>
+                `)}
               </div>
 
               <div class="col col-12 py-0 text-start">
                 <div class="row gy-2 p-0 m-0">
                   <div class="col col-12" style="--bs-bg-opacity: .5;">
-                    <button class="btn p-2" onClick=${_ => onShowModal('add', { ...schedule, id: nextId, targetId: blinds.length > 0 ? blinds[0].id: null })}>
+                    <button class="btn p-2" onClick=${_ => onShowModal('add', { ...defaultSchedule, id: nextId, targetId: blinds.length > 0 ? blinds[0].id: null })}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-square em-1" viewBox="0 0 16 16">
                         <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z" />
                         <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />

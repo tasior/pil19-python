@@ -29,8 +29,6 @@ class AppServer(IServer):
             'schedules:add': self.cmd_schedules_add,
             'schedules:edit': self.cmd_schedules_edit,
             'schedules:remove': self.cmd_schedules_remove,
-            'schedules:enable': self.cmd_schedules_enable,
-            'schedules:disable': self.cmd_schedules_disable,
         }
         self.rtc = RTC()
         self.scheduler = scheduler
@@ -128,7 +126,7 @@ class AppServer(IServer):
     
     async def cmd_schedules_edit(self, cmd):
         schedule = cmd['data']
-        self.scheduler.edit(schedule)
+        self.scheduler.update(schedule)
         return self.target_edit('schedules', schedule)
 
     def target_remove(self, target, data):
@@ -155,12 +153,6 @@ class AppServer(IServer):
     async def cmd_schedules_remove(self, cmd):
         self.scheduler.remove(cmd['data']['id'])
         return self.target_remove('schedules', cmd['data'])
-
-    async def cmd_schedules_enable(self, cmd):
-        pass
-
-    async def cmd_schedules_disable(self, cmd):
-        pass
 
     async def cmd_system_set_time(self, cmd):
         timestamp = cmd['data']

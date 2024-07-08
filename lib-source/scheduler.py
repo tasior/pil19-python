@@ -2,7 +2,8 @@ import uasyncio as asyncio
 from sched import schedule, cron
 from config import read_config, write_config
 from pil19 import Pil19
-from time import localtime
+from time import localtime, time
+from cettime import cettime
 
 class SchedulerTask:
 
@@ -22,6 +23,13 @@ class SchedulerTask:
                 print(self.args)
                 print(self.schedule)
                 self.running = True
+                next = time() + cron(**self.schedule)(time())
+                print("Next run: {}".format(next))
+                print("Next run(local): {}".format(localtime(next)))
+                print("Next run(cet):   {}".format(cettime(next)))
+
+                print("(local): {}".format(localtime()))
+                print("(cet):   {}".format(cettime()))
                 await schedule(self.func, *self.args, **self.schedule)
             except asyncio.CancelledError:
                 self.running = False
@@ -61,8 +69,8 @@ class Scheduler:
             if task.running:
                 task.stop()
     
-    def edit(self, schedule):
-        self.remove(schedule.id)
+    def update(self, schedule):
+        self.remove(schedule['id'])
         self.add(schedule)
 
 
@@ -73,7 +81,7 @@ class Scheduler:
 
         def func(target, action):
             txt = 'fun target: {}, targetId: {}, action: {}'.format(target, targetId, action)
-            yr, mo, md, h, m, s, wd = localtime()[:7]
+            yr, mo, md, h, m, s, wd = cettime()[:7]
             fst = 'Callback {} {:02d}:{:02d}:{:02d} on {:02d}/{:02d}/{:02d}'
             print(fst.format(txt, h, m, s, md, mo, yr))
 
@@ -94,13 +102,3 @@ class Scheduler:
             if task.running:
                 print('task stop')
                 task.stop()
-
-    def start_task(self, id):
-        task = self.tasks.get(id)
-        if task is not None and task.enabled:
-            task.start()
-
-    def stop_task(self, id):
-        task = self.tasks.get(id)
-        if task is not None and task.running:
-            task.stop()
