@@ -2,8 +2,14 @@ import uasyncio as asyncio
 from sched import schedule, cron
 from config import read_config, write_config
 from pil19 import Pil19
-from time import localtime, time
+from time import localtime, time, mktime
 from cettime import cettime
+
+def tz_cet(tnow):
+    return mktime(cettime(tnow))
+
+def next_run(cron_schedule):
+    return time() + cron(**cron_schedule)(time(), tz_cet)
 
 class SchedulerTask:
 
@@ -23,14 +29,8 @@ class SchedulerTask:
                 print(self.args)
                 print(self.schedule)
                 self.running = True
-                next = time() + cron(**self.schedule)(time())
-                print("Next run: {}".format(next))
-                print("Next run(local): {}".format(localtime(next)))
-                print("Next run(cet):   {}".format(cettime(next)))
 
-                print("(local): {}".format(localtime()))
-                print("(cet):   {}".format(cettime()))
-                await schedule(self.func, *self.args, **self.schedule)
+                await schedule(self.func, *self.args, **self.schedule, tz=tz_cet)
             except asyncio.CancelledError:
                 self.running = False
                 print('task {} cancelled'.format(self.args))

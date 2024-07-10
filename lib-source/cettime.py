@@ -6,7 +6,7 @@
 
 import time
 
-def cettime(secs = None):
+def cettime(secs=None):
     year = time.localtime(secs)[0]       #get current year
     HHMarch   = time.mktime((year,3 ,(31-(int(5*year/4+4))%7),1,0,0,0,0,0)) #Time of March change to CEST
     HHOctober = time.mktime((year,10,(31-(int(5*year/4+1))%7),1,0,0,0,0,0)) #Time of October change to CET

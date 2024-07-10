@@ -1,22 +1,12 @@
-# Based on https://github.com/tasior/micropython-async/tree/master
-
-# cron.py
-
-# Copyright (c) 2020-2023 Peter Hinch
-# Released under the MIT License (MIT) - see LICENSE file
-
-# A cron is instantiated with sequence specifier args. An instance accepts an integer time
-# value (in secs since epoch) and returns the number of seconds to wait for a matching time.
-# It holds no state.
-# See docs for restrictions and limitations.
-
-from time import mktime, localtime
+from cettime import cettime
+from time import mktime, localtime, time
+from sched import cron
 # Validation
 _valid = ((0, 59, 'secs'), (0, 59, 'mins'), (0, 23, 'hrs'),
           (1, 31, 'mday'), (1, 12, 'month'), (0, 6, 'wday'))
 _mdays = {2:28, 4:30, 6:30, 9:30, 11:30}
 # A call to the inner function takes 270-520μs on Pyboard depending on args
-def cron(*, secs=0, mins=0, hrs=3, mday=None, month=None, wday=None):
+def cron_cet(*, secs=0, mins=0, hrs=3, mday=None, month=None, wday=None):
     # Given an arg and current value, return offset between arg and cv
     # If arg is iterable return offset of next arg +ve for future -ve for past (add modulo)
     def do_arg(a, cv):  # Arg, current value
@@ -59,8 +49,7 @@ def cron(*, secs=0, mins=0, hrs=3, mday=None, month=None, wday=None):
     if mday is not None and wday is not None and do_arg(mday, 23) > 0:
         raise ValueError('mday must be <= 22 if wday also specified.')
 
-    def inner(tnow, tz=lambda x : x):
-        tnow = tz(tnow)
+    def inner(tnow):
         tev = tnow  # Time of next event: work forward from time now
         yr, mo, md, h, m, s, wd = localtime(tev)[:7]
         init_mo = mo  # Month now
@@ -120,65 +109,39 @@ def cron(*, secs=0, mins=0, hrs=3, mday=None, month=None, wday=None):
         return mktime((yr, mo, md, h, m, s, wd, 0)) - tnow # type: ignore
     return inner
 
-# __init__.py Common functions for uasyncio primitives
+kwargs = {"mins": 0, "hrs": 17, "wday": [0, 1, 2, 3, 4, 5, 6]}
 
-# Copyright (c) 2018-2020 Peter Hinch
-# Released under the MIT License (MIT) - see LICENSE file
+fcron = cron(**kwargs)
+t = time()
+next = fcron(t)
+next_cet = fcron(mktime(cettime(t))) # type: ignore
 
-try:
-    import uasyncio as asyncio
-except ImportError:
-    import asyncio
+print("Next     {}".format(next))
+print("Next cet {}".format(next_cet))
 
+print("local: {}".format(localtime(t + next)))
+print("cet:   {}".format(localtime(t + next_cet)))
+print("cet:   {}".format(cettime(t + next_cet)))
 
-async def _g():
-    pass
-type_coro = type(_g())
+# cronf = cron(**kwargs)
+# cron_cetf = cron_cet(**kwargs)
+# t = time()
 
-# If a callback is passed, run it and return.
-# If a coro is passed initiate it and return.
-# coros are passed by name i.e. not using function call syntax.
-def launch(func, tup_args):
-    res = func(*tup_args)
-    if isinstance(res, type_coro):
-        res = asyncio.create_task(res)
-    return res
+# cron_next = cronf(t)
+# cron_cet_next = cron_cetf(t)
+# next_run = t + cron_next
+# next_run_cet = t + cron_cet_next
 
-# sched.py
+# print("Next: {}".format(cron_next))
+# print("Next run: {}".format(next_run))
 
-# Copyright (c) 2020-2023 Peter Hinch
-# Released under the MIT License (MIT) - see LICENSE file
+# print("Next(cet)    : {}".format(cron_cet_next))
+# print("Next(cet) run: {}".format(next_run_cet))
+# print()
+# print("(local time):    {}".format(localtime()))
+# print("Next run(local): {}".format(localtime(next_run)))
+# print("Next run(cet): {}".format(localtime(next_run_cet)))
 
-import uasyncio as asyncio
-from time import time, mktime, localtime
-
-# uasyncio can't handle long delays so split into 1000s (1e6 ms) segments
-_MAXT = const(1000)
-# Wait prior to a sequence start
-_PAUSE = const(2)
-
-async def schedule(func, *args, times=None, tz=lambda x : x, **kwargs):
-    async def long_sleep(t):  # Sleep with no bounds. Immediate return if t < 0.
-        while t > 0:
-            await asyncio.sleep(min(t, _MAXT))
-            t -= _MAXT
-
-    tim = mktime(localtime()[:3] + (0, 0, 0, 0, 0))  # type: ignore # Midnight last night
-    now = round(time())  # round() is for Unix
-    fcron = cron(**kwargs)  # Cron instance for search.
-    while tim < now:  # Find first event in sequence
-        # Defensive. fcron should never return 0, but if it did the loop would never quit
-        tim += max(fcron(tim, tz), 1)
-    await long_sleep(tim - now - _PAUSE) # Time to wait (can be < 0)
-
-    while times is None or times > 0:
-        tw = fcron(round(time()), tz)  # Time to wait (s)
-        await long_sleep(tw)
-        if isinstance(func, asyncio.Event):
-            func.set()
-        else:
-            res = launch(func, args)
-        if times is not None:
-            times -= 1
-        await asyncio.sleep_ms(1200)  # ensure we're into next second
-    return res
+# print("(cet time):      {}".format(cettime()))
+# print("Next run:        {}".format(cettime(next_run)))
+# print("Next run(cet):   {}".format(cettime(next_run_cet)))
