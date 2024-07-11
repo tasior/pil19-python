@@ -1,7 +1,9 @@
-from microdot_asyncio import Microdot, send_file, Request
+from microdot_asyncio import Microdot, send_file, Request, Response
 from microdot_asyncio_websocket import with_websocket, WebSocket
 import json
 from pil19 import Pil19
+
+Response.types_map['mjs'] = 'application/javascript'
 
 class IServer:
         

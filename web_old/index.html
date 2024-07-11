@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="/static/manifest.webmanifest" />
+  <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rolety 2.0</title>
+
+  <link href="/css/bootstrap-5.3.0.min.css" rel="stylesheet">
+
+  <script src="/js/deviceid.js"></script>
+  <script src="/js/socket.js"></script>
+  <script src="/js/bootstrap-5.3.0.bundle.min.js"></script>
+
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+
+    .bi {
+      display: inline-block;
+      vertical-align: -.125em;
+      fill: currentcolor;
+    }
+
+    .em-1 {
+      width: 1em;
+      height: 1em;
+    }
+
+    .em-2 {
+      width: 2em;
+      height: 2em;
+    }
+
+    .w-2em {
+      width: 2em !important;
+    }
+
+    #menu .list-group {
+      --bs-list-group-active-bg: var(--bs-list-group-action-active-bg);
+      --bs-list-group-active-border-color: var(--bs-list-group-border-color);
+    }
+
+    #menu .list-group .list-group-item {
+      border-right-width: 0;
+      border-left-width: 0;
+    }
+
+    option:disabled {
+      color: #495057;
+    }
+  </style>
+</head>
+
+<body style="--bs-body-font-weight: 300;">
+  <div class="container-xxl text-center h-100" id="loading-container">
+    <div class="row mb-3">
+      <div class="col text-start border-bottom p-5">
+        <div class="d-flex align-items-center">
+          <span>Loading... <span class="text-danger error-message d-none">Error</span></span>
+          <div class="spinner-border ms-auto em-1" role="status" aria-hidden="true" style="--bs-spinner-border-width: 0.1em;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="auth-container" class="container-xxl text-center h-100 position-relative d-none">
+    <div class="row mb-3">
+      <div class="col text-center border-bottom p-5">
+        <p>Urządznie nie jest zautoryzowane.</p>
+        <p>Device Id: <span data-device-id="display"></span></p>
+        <button id="request-device-authorization" class="btn btn-warning d-none" onclick="request_device_authorization()">Dodaj do urządzenie</button>
+        <p id="pending-autorization" class="d-none">Oczekiwanie na autoryzację</p>
+      </div>
+    </div>
+  </div>
+  <div id="main-container" class="container-xxl text-center h-100 position-relative d-none">
+    <div id="pages" class="carousel slide h-100" data-bs-animation="50">
+      <div class="carousel-inner h-100">
+        <div class="carousel-item h-100" data-page="pilot">
+          <div class="row text-center justify-content-center overflow-auto h-100">
+            <div class="col col-9 col-md-4 col-xl-3 p-5">
+              <div class="card border border-top-0 m-auto" data-bs-theme="light">
+                <div class="card-header p-0 bg-dark-subtle" style="border: 1px solid white;border-width: 1px 10px 0 10px;">
+                  <div class="position-relative w-100 h-100" style="border: 1px solid black;border-width: 30px 10px 60px 10px;">
+                    <div class="position-absolute start-0 w-100 h-100 translate-top z-3">
+                      <select id="pilot-channel" class="opacity-0 w-100 h-100">
+                        <option value="0" data-channel-name="Wszystkie">00 Wszystkie</option>
+                        <option value="1" data-channel-name="Salon">01 Salon</option>
+                        <option value="2" data-channel-name="Taras">02 Taras</option>
+                      </select>
+                    </div>
+                    <div id="pilot-display" class="fw-bold text-secondary-emphasis">
+                      <div class="row px-2">
+                        <div class="col text-start" id="display_time">20:41</div>
+                        <div class="col text-end">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stopwatch" viewBox="0 0 16 16">
+                            <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5V5.6z" />
+                            <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64a.715.715 0 0 1 .012-.013l.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354a.512.512 0 0 1-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5zM8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="channel-no fw-semibold lh-1 py-2" style="font-size: 5.5rem!important;">00</div>
+                      </div>
+                      <div class="row px-2">
+                        <div class="col col-12 pb-3 fw-light">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-archive-fill" viewBox="0 0 16 16">
+                            <path d="M12.643 15C13.979 15 15 13.845 15 12.5V5H1v7.5C1 13.845 2.021 15 3.357 15h9.286zM5.5 7h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1zM.8 1a.8.8 0 0 0-.8.8V3a.8.8 0 0 0 .8.8h14.4A.8.8 0 0 0 16 3V1.8a.8.8 0 0 0-.8-.8H.8z">
+                            </path>
+                          </svg> <span class="channel-name">Wszystkie</span>
+                        </div>
+                        <div class="col text-start" id="display_weekday">Śr</div>
+                        <div class="col text-end" id="display_year">05/07/2023</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div style="border: 1px solid white;border-width: 0 10px 0 10px;">
+                  <div class="vstack gap-1 py-2 px-1 border border-light-subtle">
+                    <button type="button" class="btn btn-outline-secondary rounded-0 p-0 border border-light-subtle">
+                      <div class="w-100 p-2 text-secondary-emphasis border border-secondary-subtle border-top-0 border-start-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-up em-2" viewBox="0 0 16 16">
+                          <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z" />
+                        </svg>
+                      </div>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary rounded-0 p-0 border border-light-subtle">
+                      <div class="w-100 p-2 text-secondary-emphasis border border-secondary-subtle border-top-0 border-start-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stop em-2" viewBox="0 0 16 16">
+                          <path d="M3.5 5A1.5 1.5 0 0 1 5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5zM5 4.5a.5.5 0 0 0-.5.5v6a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5V5a.5.5 0 0 0-.5-.5H5z" />
+                        </svg>
+                      </div>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary rounded-0 p-0 border border-light-subtle">
+                      <div class="w-100 p-2 text-secondary-emphasis border border-secondary-subtle border-top-0 border-start-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down em-2" viewBox="0 0 16 16">
+                          <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+                        </svg>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+                <ul class="list-group list-group-flush border-top mt-5 pt-2">
+                  <li class="list-group-item">
+                    <div class="btn-group w-100" role="group" aria-label="Basic radio toggle button group" data-bs-theme="dark">
+                      <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked="">
+                      <label class="btn btn-outline-dark rounded-0 border border-0" for="btnradio1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-archive-fill" viewBox="0 0 16 16">
+                          <path d="M12.643 15C13.979 15 15 13.845 15 12.5V5H1v7.5C1 13.845 2.021 15 3.357 15h9.286zM5.5 7h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1zM.8 1a.8.8 0 0 0-.8.8V3a.8.8 0 0 0 .8.8h14.4A.8.8 0 0 0 16 3V1.8a.8.8 0 0 0-.8-.8H.8z">
+                          </path>
+                        </svg> Rolety
+                      </label>
+
+                      <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off">
+                      <label class="btn btn-outline-dark rounded-0 border border-0" for="btnradio2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill" viewBox="0 0 16 16">
+                          <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
+                          </path>
+                        </svg> Grupy
+                      </label>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item h-100 active" data-page="rolety">
+          <div class=" overflow-auto h-100">
+            <div class="row p-0 m-0">
+              <div class="col col-12 fs-2 py-2 text-start border-bottom">
+                <p class="fs-4 fw-light mt-1 mb-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-archive-fill em-1" viewBox="0 0 16 16">
+                    <path d="M12.643 15C13.979 15 15 13.845 15 12.5V5H1v7.5C1 13.845 2.021 15 3.357 15h9.286zM5.5 7h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1zM.8 1a.8.8 0 0 0-.8.8V3a.8.8 0 0 0 .8.8h14.4A.8.8 0 0 0 16 3V1.8a.8.8 0 0 0-.8-.8H.8z">
+                    </path>
+                  </svg> Rolety
+                </p>
+              </div>
+              <div class="col col-12 py-0 text-start">
+                <div class="row gy-2 p-0 m-0">
+                  <div class="col col-6 bg-secondary-subtle py-2">
+                    <div class="p-2"><strong>00</strong> Wszystkie</div>
+                  </div>
+                  <div class="col col-6 bg-secondary-subtle py-2 text-end">
+
+                    <button class="btn p-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-broadcast em-1" viewBox="0 0 16 16">
+                        <path d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+                      </svg>
+                    </button>
+                    <button class="btn p-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil em-1" viewBox="0 0 16 16">
+                        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                      </svg>
+                    </button>
+                    <button class="btn p-2 text-danger">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3 em-1" viewBox="0 0 16 16">
+                        <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col col-12 py-0 text-start">
+                <div class="row gy-2 p-0 m-0">
+                  <div class="col col-12" style="--bs-bg-opacity: .5;">
+                    <button class="btn p-2" data-bs-toggle="modal" data-bs-target="#add-channel">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-square em-1" viewBox="0 0 16 16">
+                        <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z" />
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                      </svg> Dodaj
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- MODAL -->
+              <div class="modal" tabindex="-1" id="add-channel">
+                <div class="modal-dialog modal-dialog-centered">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Dodaj rolete</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="form-floating pb-2">
+                        <select class="form-select rounded-0" id="add-channel-no" aria-label="Wybierz kanał">
+                          <option value="0" disabled>00</option>
+                          <option value="1">01</option>
+                          <option value="2">02</option>
+                          <option value="3">03</option>
+                          <option value="4">04</option>
+                          <option value="5">05</option>
+                        </select>
+                        <label for="add-channel-no">Wybierz kanał</label>
+                      </div>
+
+                      <div class="form-floating">
+                        <input type="text" class="form-control rounded-0" id="add-channel-name">
+                        <label for="add-channel-name">Nazwa</label>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-warning">Dodaj</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item h-100" data-page="grupy">
+          <div class=" overflow-auto h-100">
+            <div class="row p-0 m-0">
+              <div class="col col-12 fs-2 py-2 text-start border-bottom">
+                <p class="fs-4 fw-light mt-1 mb-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill em-1" viewBox="0 0 16 16">
+                    <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
+                    </path>
+                  </svg> Grupy
+                </p>
+              </div>
+              <div class="col col-12 py-0 text-start">
+                <div class="row gy-2 p-0 m-0">
+                  <div class="col col-8 bg-secondary-subtle py-2">
+                    <div class="p-2"><strong>00</strong> Góra</div>
+                  </div>
+                  <div class="col col-4 bg-secondary-subtle py-2 text-end">
+                    <button class="btn p-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil em-1" viewBox="0 0 16 16">
+                        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                      </svg>
+                    </button>
+                    <button class="btn p-2 text-danger">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3 em-1" viewBox="0 0 16 16">
+                        <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="col col-12 bg-secondary-subtle mt-0">
+                    <div class="border-top p-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill em-1" viewBox="0 0 16 16">
+                        <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
+                        </path>
+                      </svg> [ <strong>05</strong> Dzieci, <strong>06</strong> Sypialnia, <strong>07</strong> Biuro ]
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col col-12 py-0 text-start">
+                <div class="row gy-2 p-0 m-0">
+                  <div class="col col-12" style="--bs-bg-opacity: .5;">
+                    <button class="btn p-2" data-bs-toggle="modal" data-bs-target="#add-group">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-square em-1" viewBox="0 0 16 16">
+                        <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z" />
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                      </svg> Dodaj
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- MODAL -->
+              <div class="modal" tabindex="-1" id="add-group">
+                <div class="modal-dialog modal-dialog-centered">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Dodaj grupę</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="form-floating pb-2">
+                        <select class="form-select rounded-0" id="add-group-channels" aria-label="Wybierz rolety" size="5" multiple style="height: auto;">
+                          <option value="0">00</option>
+                          <option value="1">01</option>
+                          <option value="2">02</option>
+                          <option value="3">03</option>
+                          <option value="4">04</option>
+                          <option value="5">05</option>
+                        </select>
+                        <label for="add-group-channels">Wybierz rolety</label>
+                      </div>
+
+                      <div class="form-floating">
+                        <input type="text" class="form-control rounded-0" id="add-group-name">
+                        <label for="add-group-name">Nazwa</label>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-warning">Dodaj</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item h-100" data-page="harmonogramy">
+          <div class=" overflow-auto h-100">
+            <div class="row p-0 m-0">
+              <div class="col col-12 fs-2 py-2 text-start border-bottom">
+                <p class="fs-4 fw-light mt-1 mb-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar3 em-1" viewBox="0 0 16 16">
+                    <path d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857V3.857z"/>
+                    <path d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                  </svg> Harmonogramy
+                </p>
+              </div>
+              <div class="col col-12 py-0 text-start">
+                <div class="row gy-2 p-0 m-0 mt-2 bg-secondary-subtle">
+                  <div class="col col-2 py-2 m-0">
+                    <div class="p-2">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" checked>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col col-5 py-2 m-0">
+                    <figure class="m-0">
+                      <blockquote class="blockquote fs-6 text-truncate">
+                        00 Otwórz wszystkie
+                      </blockquote>
+                      <figcaption class="blockquote-footer mb-0">
+                        7:00, Pn-Pt
+                      </figcaption>
+                    </figure>
+                  </div>
+                  <div class="col col-5 py-2 m-0 text-end">
+                    <button class="btn p-2" data-bs-toggle="collapse" data-bs-target="#hamr-details-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle-fill em-1" viewBox="0 0 16 16">
+                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                      </svg>
+                    </button>
+                    <button class="btn p-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil em-1" viewBox="0 0 16 16">
+                        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                      </svg>
+                    </button>
+                    <button class="btn p-2 text-danger">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3 em-1" viewBox="0 0 16 16">
+                        <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="col col-12 mt-0 collapse" id="hamr-details-0">
+                    <div class="border-top p-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill em-1" viewBox="0 0 16 16">
+                        <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
+                        </path>
+                      </svg> [ <strong>05</strong> Dzieci, <strong>06</strong> Sypialnia, <strong>07</strong> Biuro ]
+                    </div>
+                  </div>
+                </div>
+                <div class="row gy-2 p-0 m-0 mt-2 bg-light-subtle">
+                  <div class="col col-2 py-2 m-0">
+                    <div class="p-2">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col col-5 py-2 m-0">
+                    <figure class="m-0">
+                      <blockquote class="blockquote fs-6 text-truncate">
+                        01 Zamknij wszystkie
+                      </blockquote>
+                      <figcaption class="blockquote-footer mb-0">
+                        21:00, Pn-Pt
+                      </figcaption>
+                    </figure>
+                  </div>
+                  <div class="col col-5 py-2 m-0 text-end">
+                    <button class="btn p-2" data-bs-toggle="collapse" data-bs-target="#hamr-details-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle-fill em-1" viewBox="0 0 16 16">
+                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                      </svg>
+                    </button>
+                    <button class="btn p-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil em-1" viewBox="0 0 16 16">
+                        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                      </svg>
+                    </button>
+                    <button class="btn p-2 text-danger">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3 em-1" viewBox="0 0 16 16">
+                        <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="col col-12 mt-0 collapse" id="hamr-details-1">
+                    <div class="border-top p-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill em-1" viewBox="0 0 16 16">
+                        <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
+                        </path>
+                      </svg> [ <strong>05</strong> Dzieci, <strong>06</strong> Sypialnia, <strong>07</strong> Biuro ]
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col col-12 py-0 text-start">
+                <div class="row gy-2 p-0 m-0">
+                  <div class="col col-12" style="--bs-bg-opacity: .5;">
+                    <button class="btn p-2" data-bs-toggle="modal" data-bs-target="#add-schedule">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-square em-1" viewBox="0 0 16 16">
+                        <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z" />
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                      </svg> Dodaj
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- MODAL -->
+              <div class="modal" tabindex="-1" id="add-schedule">
+                <div class="modal-dialog modal-dialog-centered">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Dodaj grupę</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="form-floating pb-2">
+                        <select class="form-select rounded-0" id="add-schedule-channels" aria-label="Wybierz rolety" size="5" multiple style="height: auto;">
+                          <option value="0">00</option>
+                          <option value="1">01</option>
+                          <option value="2">02</option>
+                          <option value="3">03</option>
+                          <option value="4">04</option>
+                          <option value="5">05</option>
+                        </select>
+                        <label for="add-schedule-channels">Wybierz rolety</label>
+                      </div>
+
+                      <div class="form-floating">
+                        <input type="text" class="form-control rounded-0" id="add-schedule-name">
+                        <label for="add-schedule-name">Nazwa</label>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-warning">Dodaj</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item h-100" data-page="ustawienia">
+          <div class=" overflow-auto h-100">
+            <div class="row p-0 m-0">
+              <div class="col col-12 fs-2 py-2 text-start border-bottom">
+                <p class="fs-4 fw-light mt-1 mb-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill em-1" viewBox="0 0 16 16">
+                    <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z">
+                    </path>
+                  </svg> Ustawienia
+                </p>
+              </div>
+              <div class="col col-12 py-0 text-start">
+                <div class="row gy-2 p-0 m-0">
+                  <div class="col col-8 bg-secondary-subtle py-2">
+                    <div class="p-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clock em-1" viewBox="0 0 16 16">
+                        <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                      </svg> Zegar systemowy
+                    </div>
+                  </div>
+                  <div class="col col-4 bg-secondary-subtle py-2 text-end">
+                    <button class="btn p-2" onclick="set_time()">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat em-1" viewBox="0 0 16 16">
+                        <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+                        <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="col col-12 bg-secondary-subtle mt-0">
+                    <div class="border-top p-3">
+                      <strong>Czas urządzenia:</strong> <span id="board_time"></span><br>
+                      <strong>Aktualny czas:</strong> <span id="device_time"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="position-absolute bottom-0 end-0 p-4">
+      <div class="sub-menu sub-menu-pilot vstack gap-2 pb-2">
+        <button type="button" class="btn btn-outline-secondary text-secondary-emphasis border-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stopwatch" viewBox="0 0 16 16">
+            <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5V5.6z" />
+            <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64a.715.715 0 0 1 .012-.013l.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354a.512.512 0 0 1-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5zM8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3z" />
+          </svg>
+        </button>
+        <button type="button" class="btn btn-outline-secondary text-secondary-emphasis border-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-bar-up" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M3.646 11.854a.5.5 0 0 0 .708 0L8 8.207l3.646 3.647a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 0 0 0 .708zM2.4 5.2c0 .22.18.4.4.4h10.4a.4.4 0 0 0 0-.8H2.8a.4.4 0 0 0-.4.4z" />
+          </svg>
+        </button>
+        <button type="button" class="btn btn-outline-secondary text-secondary-emphasis border-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-bar-down" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M3.646 4.146a.5.5 0 0 1 .708 0L8 7.793l3.646-3.647a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708zM1 11.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5z" />
+          </svg>
+        </button>
+        <button type="button" class="btn btn-outline-secondary text-secondary-emphasis border-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-sliders2-vertical" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M0 10.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 0-1H3V1.5a.5.5 0 0 0-1 0V10H.5a.5.5 0 0 0-.5.5ZM2.5 12a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 1 0v-2a.5.5 0 0 0-.5-.5Zm3-6.5A.5.5 0 0 0 6 6h1.5v8.5a.5.5 0 0 0 1 0V6H10a.5.5 0 0 0 0-1H6a.5.5 0 0 0-.5.5ZM8 1a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 1 0v-2A.5.5 0 0 0 8 1Zm3 9.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 0-1H14V1.5a.5.5 0 0 0-1 0V10h-1.5a.5.5 0 0 0-.5.5Zm2.5 1.5a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 1 0v-2a.5.5 0 0 0-.5-.5Z" />
+          </svg>
+        </button>
+      </div>
+
+      <button class="btn btn-warning position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#menu" aria-controls="menu">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z" />
+        </svg>
+        <div class="spinner-grow spinner-grow-sm text-danger position-absolute top-0 start-100 translate-middle" role="status" style="--bs-spinner-width: 0.5rem; --bs-spinner-height: 0.5rem;">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div class="offcanvas offcanvas-bottom" tabindex="-1" id="menu" aria-labelledby="menuLabel" style="--bs-offcanvas-height: 40vh;" data-bs-theme="dark">
+    <div class="offcanvas-header">
+      <p class="offcanvas-title fs-4 fw-light" id="menuLabel">
+        Menu
+      </p>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+      <div class="list-group rounded-0">
+        <a href="#" class="list-group-item list-group-item-action active" data-bs-target="#pages" data-bs-slide-to="0" aria-current="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pc" viewBox="0 0 16 16">
+            <path d="M5 0a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1H5Zm.5 14a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1Zm2 0a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1ZM5 1.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5ZM5.5 3h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1Z" />
+          </svg> Pilot
+        </a>
+        <a href="#" class="list-group-item list-group-item-action" data-bs-target="#pages" data-bs-slide-to="1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-archive-fill" viewBox="0 0 16 16">
+            <path d="M12.643 15C13.979 15 15 13.845 15 12.5V5H1v7.5C1 13.845 2.021 15 3.357 15h9.286zM5.5 7h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1zM.8 1a.8.8 0 0 0-.8.8V3a.8.8 0 0 0 .8.8h14.4A.8.8 0 0 0 16 3V1.8a.8.8 0 0 0-.8-.8H.8z" />
+          </svg> Rolety
+        </a>
+        <a href="#" class="list-group-item list-group-item-action" data-bs-target="#pages" data-bs-slide-to="2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection-fill" viewBox="0 0 16 16">
+            <path d="M0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zM2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3zm2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1z" />
+          </svg> Grupy
+        </a>
+        <a href="#" class="list-group-item list-group-item-action" data-bs-target="#pages" data-bs-slide-to="3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-week-fill" viewBox="0 0 16 16">
+            <path d="M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v1h16V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4V.5zM16 14V5H0v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2zM9.5 7h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm3 0h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zM2 10.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3.5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z" />
+          </svg> Harmonogramy
+        </a>
+        <a href="#" class="list-group-item list-group-item-action" data-bs-target="#pages" data-bs-slide-to="4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16">
+            <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z" />
+          </svg>
+          <span class="position-relative">
+            <div class="spinner-grow spinner-grow-sm text-danger position-absolute top-0 start-100 translate-middle m-1" role="status" style="--bs-spinner-width: 0.5rem; --bs-spinner-height: 0.5rem;">
+              <span class="visually-hidden">Loading...</span>
+            </div> Ustawienia
+          </span>
+          </span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const deviceId = getDeviceId();
+    document.querySelectorAll('[data-device-id="display"]').forEach(e => e.innerHTML = deviceId);
+
+    var app_config = {};
+    const socket = createWebSocket(deviceId, window.location.host, `ws?deviceId=${deviceId}`);
+    // const socket = createWebSocket(deviceId, `192.168.68.115`, `ws?deviceId=${deviceId}`);
+
+    var time = { board_time: '', device_time: '' };
+
+    const menu = new bootstrap.Offcanvas('#menu');
+
+    const pagesElement = document.querySelector('#pages');
+    const pagesCarousel = new bootstrap.Carousel(pagesElement);
+    pagesElement.addEventListener('slide.bs.carousel', event => {
+      document.querySelectorAll('#menu [data-bs-slide-to]').forEach(e => e.classList.remove('active'));
+      document.querySelector('#menu [data-bs-slide-to="' + event.to + '"]').classList.add('active');
+
+      document.querySelectorAll('.sub-menu').forEach(e => e.classList.add('d-none'));
+      const submenu = document.querySelector('.sub-menu.sub-menu-' + pagesCarousel._getActive().getAttribute('data-page'));
+    });
+    pagesElement.addEventListener('slid.bs.carousel', event => {
+      toggleSubMenu();
+    });
+
+    function toggleSubMenu() {
+      document.querySelectorAll('.sub-menu').forEach(e => e.classList.add('d-none'));
+      const submenu = document.querySelector('.sub-menu.sub-menu-' + pagesCarousel._getActive().getAttribute('data-page'));
+      if (submenu)
+        submenu.classList.remove('d-none');
+    }
+
+    (() => {
+      document.querySelectorAll('#menu [data-bs-slide-to]').forEach(e => e.classList.remove('active'));
+      document.querySelector('#menu [data-bs-slide-to="' + pagesCarousel._getItemIndex(pagesCarousel._getActive()) + '"]').classList.add('active');
+
+      toggleSubMenu();
+    })(); // init menu
+
+    const pilotChannel = document.querySelector('#pilot-channel');
+    const pilotChannelLabel = document.querySelector('#pilot-display');
+    pilotChannel.addEventListener('change', () => {
+      pilotChannelLabel.querySelector('.channel-no').innerHTML = pilotChannel.value.padStart(2, '0');
+      pilotChannelLabel.querySelector('.channel-name').innerHTML = pilotChannel.querySelector('option:checked').getAttribute('data-channel-name');
+    });
+
+    const cmd = {
+      auth_check: 'auth:check',
+      auth_request: 'auth:request',
+      auth_requested: 'auth:requested',
+      config_get: 'config:get',
+      config_save: 'config:save',
+      system_time: 'system:time',
+      system_set_time: 'system:set_time',
+    };
+
+    async function set_time() {
+      await socket.send(cmd.system_set_time, Math.floor(Date.now() / 1000));
+    }
+
+    async function load_config() {
+      app_config = await socket.send(cmd.config_get);
+      console.log(app_config);
+    }
+
+    async function request_device_authorization() {
+      document.querySelector('#request-device-authorization').classList.add('d-none')
+      document.querySelector('#pending-autorization').classList.remove('d-none')
+      await socket.send(cmd.auth_request)
+    }
+
+    var weekDays = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So'];
+    function update_dates() {
+      document.querySelector('#board_time').innerHTML = time.board_time.toLocaleString();
+      document.querySelector('#device_time').innerHTML = time.device_time.toLocaleString();
+      document.querySelector('#display_time').innerHTML = `${('0' + time.board_time.getHours()).slice(-2)}:${('0' + time.board_time.getMinutes()).slice(-2)}`;
+      document.querySelector('#display_weekday').innerHTML = weekDays[time.board_time.getDay()];
+      document.querySelector('#display_year').innerHTML = `${('0' + time.board_time.getDate()).slice(-2)}/${('0' + time.board_time.getMonth()+1).slice(-2)}/${time.board_time.getFullYear()}`;
+    }
+
+    (async function () {
+      await socket.connect();
+      socket.on('close', () => console.log('WS CLOSED!!!'));
+      socket.on('message', (e) => console.log('WS MESSAGE', e.data));
+      socket.listen(cmd.auth_requested, (cmd, data) => console.log('auth:requested', cmd, data))
+      socket.listen(cmd.system_time, (cmd, data) => {
+        console.log(cmd, data);
+        time.board_time = new Date(data.data * 1000);
+        time.device_time = new Date();
+        update_dates();
+      });
+
+      const auth_response = await socket.send(cmd.auth_check);
+      console.log(auth_response)
+      if ( auth_response.status == 'ERROR' ) {
+        // handle unautorized device
+        document.querySelector('#loading-container .error-message').innerHTML = 'Error: ' + auth_response.error_message;
+        document.querySelector('#loading-container .error-message').classList.remove('d-none');
+        if (auth_response.error_code == 401) {
+          setTimeout(() => {
+            if(auth_response.device != null && auth_response.device.id == deviceId) {
+              document.querySelector('#pending-autorization').classList.remove('d-none')
+            } else {
+              document.querySelector('#request-device-authorization').classList.remove('d-none')
+            }
+
+            document.querySelector('#loading-container').classList.add('d-none');
+            document.querySelector('#auth-container').classList.remove('d-none');
+          }, 1000);
+        }
+      } else {
+        // initialize
+        document.querySelector('#loading-container').classList.add('d-none');
+        document.querySelector('#main-container').classList.remove('d-none');
+
+        await load_config();
+      }
+    })();
+  </script>
+</body>
+
+</html>

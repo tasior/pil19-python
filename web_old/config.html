@@ -12,7 +12,9 @@
 
   <link href="/css/bootstrap-5.3.0.min.css" rel="stylesheet">
 
-  <script src="/js/lib/bootstrap-5.3.0.bundle.min.js"></script>
+  <script src="/js/deviceid.js"></script>
+  <script src="/js/socket.js"></script>
+  <script src="/js/bootstrap-5.3.0.bundle.min.js"></script>
 
   <style>
     html,
@@ -69,7 +71,7 @@
               <span class="visually-hidden">Loading...</span>
             </div>
           </button>
-          <button class="btn btn-warning rounded-0" type="button" id="wifi_scan_btn">
+          <button class="btn btn-warning rounded-0" type="button" id="wifi_scan_btn" onclick="wifi_scan()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
               <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z" />
               <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z" />
@@ -209,17 +211,15 @@
     </div>
   </div>
 
-  <script type="module">
-    import { deviceId } from './js/deviceid.mjs';
-    import { createWebSocket } from './js/socket.mjs';
-
+  <script>
+    const deviceId = getDeviceId();
     var app_config = {};
     var app_config_changed = false;
 
     document.querySelector('#this-device-id').value = deviceId;
 
     // const socket = createWebSocket(deviceId, '192.168.4.1', 'ws');
-    const socket = createWebSocket(deviceId, `ws://${window.location.host}/ws?deviceId=${deviceId}`);
+    const socket = createWebSocket(deviceId, window.location.host, 'ws');
     const cmd = {
       config_get: 'config:get',
       config_save: 'config:save',
@@ -316,7 +316,7 @@
     }
 
     async function load_config() {
-      let config_res = await socket.send(cmd.config_get);
+      config_res = await socket.send(cmd.config_get);
       if (config_res.status == 'OK') {
         app_config = config_res.data;
         document.querySelector('#wifi_password').value = app_config.wifi_password ? app_config.wifi_password : '';
@@ -375,7 +375,6 @@
         await load_config();
         document.querySelector('#loading-container').classList.add('d-none');
         document.querySelector('#config-container').classList.remove('d-none');
-        document.querySelector('#wifi_scan_btn').addEventListener('click', (_) => wifi_scan())
       } catch(e) {
         console.error(e)
         document.querySelector('#loading-container .error-message').classList.remove('d-none')
