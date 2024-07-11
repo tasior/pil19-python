@@ -84,6 +84,9 @@ class Scheduler:
             yr, mo, md, h, m, s, wd = cettime()[:7]
             fst = 'Callback {} {:02d}:{:02d}:{:02d} on {:02d}/{:02d}/{:02d}'
             print(fst.format(txt, h, m, s, md, mo, yr))
+            channels = [targetId] if target == 'blinds' else targetId
+            for channel in channels:
+                self.pil19.send(channel, action)
 
         return SchedulerTask(id, enabled, schedule, func, target, action)
 
