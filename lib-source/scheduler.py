@@ -6,7 +6,7 @@ from time import localtime, time, mktime
 from cettime import cettime
 
 def tz_cet(tnow):
-    return mktime(cettime(tnow))
+    return mktime(cettime(tnow)) # type: ignore
 
 def next_run(cron_schedule):
     return time() + cron(**cron_schedule)(time(), tz_cet)

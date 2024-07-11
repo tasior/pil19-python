@@ -46,11 +46,7 @@ def pil19_send_data_pio():
 
 class Pil19:
 
-    __min_sleep_s__ = const(0.3)
-    __min_sleep_s_lamel__ = const(1.25)
-
-    @staticmethod
-    def crc8(bytes, poly=0x07, init=0x00):
+    def crc8(self, bytes, poly=0x07, init=0x00) -> int:
         crc = init
         for byte in bytes:
             crc = crc ^ byte
@@ -61,9 +57,8 @@ class Pil19:
                 crc &= 0xFF
         return crc
 
-    @staticmethod
-    def command(channel, command):
-        return Pil19.crc8([channel, command], poly=0x95, init=0xef) | (channel << 16) | (command << 8)
+    def command(self, channel, command) -> int:
+        return self.crc8([channel, command], poly=0x95, init=0xef) | (channel << 16) | (command << 8)
     
     def __init__(self, pio: int, rx_base: int, tx_base: int, data_base) -> None:
         self.tx_pin = Pin(tx_base, Pin.OUT, Pin.PULL_UP)
@@ -73,9 +68,9 @@ class Pil19:
         self.sm.active(1)
 
     def send(self, channel: int, action: str):
-        self.send_raw(self.send_raw(Pil19.command((0x80 + channel), pil19_command[action])))
+        self.send_raw(self.command((0x80 + channel), pil19_command[action]))
 
-    def send_raw(self, command):
+    def send_raw(self, command: int):
         self.timer.deinit()
         self.tx_pin.high()
         while self.rx_pin.value() == 0:
@@ -86,7 +81,7 @@ class Pil19:
         self.sm.put(command)
 
         if (command >> 8) & 0xFF in [0xb0, 0xd0]:
-            sleep(Pil19.__min_sleep_s_lamel__)
+            sleep(1.25)
         else:
-            sleep(Pil19.__min_sleep_s__)
+            sleep(0.3)
     

@@ -37,9 +37,9 @@ try:
     if not wlan.connect(wlan_ssid, wlan_password):
         raise RuntimeError('Cannot connect to wifi')
     
-    rx_base = 13
-    tx_base = 14
-    dat_base = 15
+    rx_base = 18
+    tx_base = 17
+    dat_base = 16
     print('[Main] Initializing Pil19(0, rx: {}, tx: {}, dat: {})...'.format(rx_base, tx_base, dat_base))
     pil19 = Pil19(0, rx_base, tx_base, dat_base)
 
