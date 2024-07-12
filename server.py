@@ -31,12 +31,13 @@ class IServer:
                         raise
         return ws_route
 
-    def __init__(self, config, pil19: Pil19, wlan, port, index_path) -> None:
+    def __init__(self, config, pil19: Pil19, wlan, port, ssl, index_path) -> None:
         self.app = Microdot()
         self.config = config
         self.pil19 = pil19
         self.wlan = wlan
         self.port = port
+        self.ssl = ssl
         self.is_debug_enabled = config.get('enable_debug', True) == True
         self.ws_clients = []
 
@@ -53,7 +54,7 @@ class IServer:
             await ws.send(json.dumps(message))
 
     async def run(self):
-        await self.app.start_server(port=self.port, debug=self.is_debug_enabled)
+        await self.app.start_server(port=self.port, ssl=self.ssl, debug=self.is_debug_enabled)
     
     def debug(self, message):
         if self.is_debug_enabled: print(message)

@@ -6,8 +6,8 @@ from machine import soft_reset
 
 class AdminServer(IServer):
 
-    def __init__(self, config, pil19, wlan, port, index_path) -> None:
-        super().__init__(config, pil19, wlan, port, index_path)
+    def __init__(self, config, pil19, wlan, port, ssl, index_path) -> None:
+        super().__init__(config, pil19, wlan, port, ssl, index_path)
         self.handlers = {
             'config:get': self.cmd_config_get,
             'config:save': self.cmd_config_save,

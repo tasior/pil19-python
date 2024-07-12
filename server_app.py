@@ -9,8 +9,8 @@ from scheduler import Scheduler
 
 class AppServer(IServer):
 
-    def __init__(self, config: dict, pil19: Pil19, scheduler: Scheduler, wlan, port, index_path) -> None:
-        super().__init__(config, pil19, wlan, port, index_path)
+    def __init__(self, config: dict, pil19: Pil19, scheduler: Scheduler, wlan, port, ssl, index_path) -> None:
+        super().__init__(config, pil19, wlan, port, ssl, index_path)
         self.handlers = {
             'auth:check': self.cmd_auth_check,
             'auth:request': self.cmd_auth_request,
@@ -56,7 +56,7 @@ class AppServer(IServer):
             
             for channel in target_channels:
                 self.debug("Pil19: {}, {}".format(channel, action))
-                self.pil19.send(channel, action)
+                self.pil19.send(int(channel), action)
 
         except StopIteration:
             raise ValueError('{} not exists'.format(target[0].upper() + target[1:-1]))

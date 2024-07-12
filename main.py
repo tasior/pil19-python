@@ -1,6 +1,9 @@
 import sys
 import uasyncio as asyncio
+import ntptime
+import ssl
 from machine import soft_reset
+from time import localtime, sleep
 
 from config import read_config, MODE_ADMIN
 from pil19 import Pil19
@@ -37,6 +40,18 @@ try:
     if not wlan.connect(wlan_ssid, wlan_password):
         raise RuntimeError('Cannot connect to wifi')
     
+    print('[Main] Initializing time...')
+    ret = 3
+    while ret > 0:
+        try:
+            ntptime.settime()
+        except:
+            print('[Main] Retry {}'.format(ret))
+            sleep(2)
+        finally:
+            ret -= 1
+    print('[Main] Local time: {}'.format(localtime()))
+    
     rx_base = 18
     tx_base = 17
     dat_base = 16
@@ -48,11 +63,15 @@ try:
     scheduler = Scheduler(config_path=config_cron_path, pil19=pil19)
     scheduler.initialize()
     
+    # print('[Main] Initializing SSL...')
+    # sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    # sslctx.load_cert_chain('/ec_cert.der', '/ec_key.der')
+
     print('[Main] Initializing server...')
     if mode == MODE_ADMIN:
-        server = AdminServer(config=config, pil19=pil19, wlan=wlan, port=80, index_path='/web/config.html')
+        server = AdminServer(config=config, pil19=pil19, wlan=wlan, port=80, ssl=None, index_path='/web/config.html')
     else:
-        server = AppServer(config=config, pil19=pil19, scheduler=scheduler, wlan=wlan, port=80, index_path='/web/index.html')
+        server = AppServer(config=config, pil19=pil19, scheduler=scheduler, wlan=wlan, port=80, ssl=None, index_path='/web/index.html')
 
     asyncio.run(main(server_coro=server.run(), scheduler=scheduler))
 except Exception as e:

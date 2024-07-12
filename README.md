@@ -32,3 +32,8 @@ mpremote cp lib/sched.mpy :/lib/sched.mpy
 mpremote cp lib/scheduler.mpy :/lib/scheduler.mpy
 mpremote cp lib/ssd1306.mpy :/lib/ssd1306.mpy
 mpremote cp lib/wifi.mpy :/lib/wifi.mpy
+
+
+SSL GEN:
+$ openssl ecparam -name prime256v1 -genkey -noout -out ec_key.der -outform DER
+$ openssl req -new -x509 -key ec_key.der -out ec_cert.der -outform DER -days 365 -nodes 
