@@ -56,7 +56,7 @@ class AppServer(IServer):
             
             for channel in target_channels:
                 self.debug("Pil19: {}, {}".format(channel, action))
-                # self.pil19.send(channel, action)
+                self.pil19.send(channel, action)
 
         except StopIteration:
             raise ValueError('{} not exists'.format(target[0].upper() + target[1:-1]))
