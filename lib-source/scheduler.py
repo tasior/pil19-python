@@ -86,7 +86,7 @@ class Scheduler:
             print(fst.format(txt, h, m, s, md, mo, yr))
             channels = [targetId] if target == 'blinds' else targetId
             for channel in channels:
-                self.pil19.send(channel, action)
+                self.pil19.send(int(channel), action)
 
         return SchedulerTask(id, enabled, schedule, func, target, action)
 
