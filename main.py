@@ -2,8 +2,9 @@ import sys
 import uasyncio as asyncio
 import ntptime
 import ssl
-from machine import soft_reset
+from machine import soft_reset, Pin, SoftI2C, RTC
 from time import localtime, sleep
+from ssd1306 import SSD1306_I2C
 
 from config import read_config, MODE_ADMIN
 from pil19 import Pil19
@@ -13,11 +14,21 @@ from server_admin import AdminServer
 from scheduler import Scheduler
 
 wlan: WiFi | None = None
+pin = Pin("LED", Pin.OUT)
+
+scl = Pin(15, mode=Pin.OUT, pull=Pin.PULL_UP)
+sda = Pin(14, mode=Pin.OUT, pull=Pin.PULL_UP)
+i2c = SoftI2C(scl, sda)
+
+d = SSD1306_I2C(128, 64, i2c)
+d.init_display()
 
 def on_wlan(wlan: WiFi, event, data = None):
     print('[Wlan] Event: {} {}'.format(event, data))
     if event == EVENT_CONNECTED:
         print('[Wlan] Connected. IP: {}'.format(wlan.ip()))
+        d.text(str('{}'.format(wlan.ip())), 0, 0)
+        d.show()
 
 async def main(server_coro, scheduler: Scheduler):
     scheduler.start()
@@ -68,6 +79,7 @@ try:
     # sslctx.load_cert_chain('/ec_cert.der', '/ec_key.der')
 
     print('[Main] Initializing server...')
+    pin.high()
     if mode == MODE_ADMIN:
         server = AdminServer(config=config, pil19=pil19, wlan=wlan, port=80, ssl=None, index_path='/web/config.html')
     else:
